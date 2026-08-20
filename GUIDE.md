@@ -114,6 +114,53 @@ func main() {
 `func Структура.метод(...)` окремо від оголошення `struct`, доступ до
 поточного екземпляра — `self`, не `this`.
 
+### Успадкування (extends, super)
+```nx
+struct Animal {
+    name: string
+
+    func speak() {
+        print(self.name + " видає якийсь звук.")
+    }
+
+    // self.speak() тут знайде найбільш ПОХІДНЕ перевизначення —
+    // поліморфізм: диспетчеризація завжди йде за РЕАЛЬНИМ типом self,
+    // а не за тим, де саме оголошений метод, що його викликає.
+    func introduce() {
+        print("Це " + self.name + ".")
+        self.speak()
+    }
+}
+
+struct Dog extends Animal {
+    func speak() {
+        super.speak()          // виклик батьківської реалізації
+        print(self.name + " гавкає: Гав!")
+    }
+}
+
+func main() {
+    var dog = Dog { name: "Рекс" }
+    dog.introduce()
+    // Це Рекс.
+    // Рекс видає якийсь звук.
+    // Рекс гавкає: Гав!
+}
+```
+
+`extends Батько` дає структурі доступ до всіх методів предка (і предків
+предка — ланцюжок необмежений), яких вона сама не перевизначає. Перевизначений
+метод повністю замінює батьківський для екземплярів дочірньої структури;
+`super.метод(...)` усередині перевизначення викликає САМЕ батьківську
+реалізацію, минаючи перевизначення (інакше вийшла б нескінченна рекурсія).
+
+Чого свідомо НЕМАЄ (щоб не роздувати мову): модифікаторів доступу
+(`private`/`public` — усі поля й методи публічні), множинного успадкування,
+абстрактних структур/інтерфейсів. Поля предка й нащадка — просто ключі
+одного словника, окремого оголошення "успадкованих полів" не існує:
+`Dog { name: "Рекс" }` уже отримує все, чого очікують і власні методи Dog,
+і успадковані від Animal.
+
 ### Обробка помилок (try/catch/throw)
 ```nx
 func riskyDivide(a, b) {
@@ -392,6 +439,8 @@ closeCanvas(canvas)
 - `max/min(a,b)` або `max/min(arr)` - максимум/мінімум двох чисел або всього масиву
 - `toFixed(x,n)` - число як рядок з n знаками після коми, напр. `toFixed(3.14159, 2)` -> `"3.14"`
 - `readFile(path)`, `writeFile(path, content)`, `appendFile(path, content)`, `fileExists(path)`, `readLines(path)` - робота з файлами
+- `deleteFile(path)`, `makeDir(path)`, `dirExists(path)`, `deleteDir(path)` (рекурсивно), `listDir(path)` (масив імен файлів/тек усередині) - файли й теки
+- `zipCreate(zipPath, sourceDir)` - запакувати теку в архів; `zipExtract(zipPath, destDir)` - розпакувати ввесь архів, повертає кількість файлів; `zipEntries(zipPath)` - список імен файлів усередині БЕЗ розпаковування; `zipExtractEntry(zipPath, entryName, destPath)` - витягнути лише один файл, повертає `true`/`false` (є така точка в архіві?)
 - `toString(v)`, `toInt(v)`, `toDouble(v)`, `typeOf(v)`, `isNumber/isString/isArray/isBool(v)` - перетворення та перевірка типів
 - `charCode(s)` - код першого символу рядка (наприклад, `charCode("A")` -> 65); `fromCharCode(code)` - символ за кодом
 - `len(v)`, `substring(s,start,len)`, `replace/toUpper/toLower/contains/startsWith/endsWith(s,...)`, `split(s,sep)`, `join(arr,sep)` - рядки
@@ -415,7 +464,9 @@ closeCanvas(canvas)
 - `guiShow(win)` - показати вікно (блокує, доки вікно не закриють)
 - `isKeyDown(key)`, `isMouseDown(canvas)`, `getMouseX/Y(canvas)` - ввід для вікна
 - `randomInt(min,max)`, `randomDouble(min,max)`, `now()`, `today()`, `timestamp()` - утиліти
+- `formatDate(timestamp, format?)` - Unix-timestamp (секунди) у рядок довільного формату (.NET custom date format, напр. `"dd.MM.yyyy HH:mm"`); без `format` - той самий вигляд, що й `now()`; `parseDate(str, format)` - обернена операція, рядок за форматом назад у Unix-timestamp; кидає помилку, якщо рядок не відповідає формату
 - `osPlatform()`, `osArchitecture()`, `osMemory()`, `osCpuCount()`, `osEnv(name)`, `osCwd()` - інформація про систему
+- `procStart(cmd, args?, options?)` - запускає зовнішній процес ОС і одразу повертає хендл, НЕ чекаючи завершення (`args` - масив рядків, `options` - мапа з `cwd`/`env`); `procRun(cmd, args?, options?)` - те саме, але БЛОКУЄ до завершення й повертає мапу `{exitCode, stdout, stderr}`; `procWait(h)` - чекає завершення вже запущеного `procStart`, повертає код виходу; `procIsRunning(h)`, `procKill(h)`, `procPid(h)`, `procExitCode(h)` (`null`, доки процес ще працює); `procOutput(h)`/`procErrorOutput(h)` - усе, що процес вивів у stdout/stderr ДОСІ (можна перечитувати повторно, поки процес ще працює). У пісочниці (`NX_SANDBOX=1`) заборонено завжди
 - `httpGet(url)`, `urlStatus(url)` - HTTP-запити
 - `httpPost(url, body)` - POST-запит з тілом `body` (Content-Type `application/json`), повертає тіло відповіді рядком
 - `httpRequest(url, method, body?, headers?)` - запит довільним методом (`"PUT"`, `"DELETE"`, `"PATCH"` тощо), повертає мапу `{status, body}`; `headers` - мапа (`newMap`/`mapSet`) для заголовків на кшталт `Authorization`
