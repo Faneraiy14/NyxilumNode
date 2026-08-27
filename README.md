@@ -1,64 +1,66 @@
 # NyxilumNode
 
-Виконує програми, написані на мові **NyxilumLang** (`.nx` файли). Аналог
-`node.js`, тільки для NyxilumLang: готовий бінарник, встановлення, менеджер
-бібліотек — .NET встановлювати не треба.
+*[Українською](README.uk.md)*
 
-Вихідний код самої мови — окремий репозиторій:
+Runs programs written in **NyxilumLang** (`.nx` files). The equivalent
+of `node.js`, but for NyxilumLang: a ready-made binary, an installer, a
+library manager — no need to install .NET.
+
+The language's own source code lives in a separate repository:
 [github.com/Faneraiy14/NyxilumLang](https://github.com/Faneraiy14/NyxilumLang).
 
-## Встановлення
+## Installation
 
-Скачай архів для своєї платформи зі сторінки
-[Releases](../../releases/latest), розпакуй.
+Download the archive for your platform from the
+[Releases](../../releases/latest) page and unpack it.
 
 **Windows:**
 
-1. Клацни правою на `install-nx.ps1` → **«Запустити за допомогою
-   PowerShell»** (або `powershell -ExecutionPolicy Bypass -File install-nx.ps1`).
-2. Відкрий **нове** вікно термінала (PATH оновлюється лише в нових).
+1. Right-click `install-nx.ps1` → **"Run with PowerShell"**
+   (or `powershell -ExecutionPolicy Bypass -File install-nx.ps1`).
+2. Open a **new** terminal window (PATH only updates in new ones).
 
-Якщо Windows покаже «Windows захистила ваш ПК» — файл не підписаний
-платним сертифікатом. «Докладніше» → «Виконати все одно».
+If Windows shows "Windows protected your PC" — the file isn't signed
+with a paid certificate. Click "More info" → "Run anyway".
 
 **Linux/Mac:**
 
 ```bash
 bash install-nx.sh
-source ~/.bashrc   # або ~/.zshrc, або просто відкрий новий термінал
+source ~/.bashrc   # or ~/.zshrc, or just open a new terminal
 ```
 
-GUI (`guiWindow` тощо) і графіка (`createCanvas` тощо) працюють лише на
-Windows — там усередині Windows Forms, який поза Windows не існує. Решта
-мови (компілятор, VM, майже вся стандартна бібліотека) працює однаково
-на всіх трьох платформах.
+GUI (`guiWindow` etc.) and graphics (`createCanvas` etc.) only work on
+Windows — under the hood they use Windows Forms, which doesn't exist
+outside Windows. The rest of the language (the compiler, VM, and almost
+the entire standard library) works the same on all three platforms.
 
-Перевірка після встановлення (будь-яка платформа):
+Verify the install (any platform):
 
 ```bash
 nx --version
 ```
 
-## Команди
+## Commands
 
-| Команда | Що робить |
+| Command | What it does |
 |---|---|
-| `nx файл.nx` | запустити файл |
-| `nx` | REPL — виконання рядок за рядком, `exit()` для виходу |
-| `nx install owner/repo` | встановити бібліотеку з публічного GitHub-репозиторію |
-| `nx install` | встановити все з `nx.json` у поточній папці |
-| `nx uninstall name` | прибрати бібліотеку з `nx.json` і з `nx_modules/` |
-| `nx update` / `nx update name` | оновити всі бібліотеки чи одну на поточний default branch |
-| `nx format файл.nx` | форматувати файл |
-| `nx lint файл.nx` | перевірити файл на типові помилки |
-| `nx check файл.nx` | перевірити лише синтаксис (без виконання коду) |
-| `nx --version` | версія |
+| `nx file.nx` | run a file |
+| `nx` | REPL — executes line by line, `exit()` to quit |
+| `nx install owner/repo` | install a library from a public GitHub repository |
+| `nx install` | install everything listed in the current folder's `nx.json` |
+| `nx uninstall name` | remove a library from `nx.json` and from `nx_modules/` |
+| `nx update` / `nx update name` | update all libraries, or one, to the current default branch |
+| `nx format file.nx` | format a file |
+| `nx lint file.nx` | check a file for common mistakes |
+| `nx check file.nx` | check syntax only (no code execution) |
+| `nx --version` | version |
 
-## Перша програма
+## First program
 
 ```nx
 func main() {
-    print("Привіт, NyxilumLang!")
+    print("Hello, NyxilumLang!")
 }
 ```
 
@@ -66,40 +68,41 @@ func main() {
 nx hello.nx
 ```
 
-## Бібліотеки
+## Libraries
 
-Пакет — будь-який публічний GitHub-репозиторій із `main.nx` у корені:
+A package is any public GitHub repository with `main.nx` at its root:
 
 ```bash
 nx install owner/repo
 ```
 
-Тягне його в `nx_modules/<repo>/` і дописує залежність у `nx.json`
-поруч із твоїм файлом — точним SHA коміта, а не назвою гілки, тож
-повторний `nx install` завжди відтворює той самий байт-в-байт вміст,
-навіть якщо гілку пакета пізніше оновили чи переписали. Підключення
-без `.nx` і без шляху:
+This pulls it into `nx_modules/<repo>/` and adds the dependency to
+`nx.json` next to your file — pinned to the exact commit SHA, not a
+branch name, so a repeated `nx install` always reproduces the exact
+same byte-for-byte content, even if the package's branch is later
+updated or rewritten. Importing it needs no `.nx` extension and no
+path:
 
 ```nx
 import "repo"
 
 func main() {
-    print(якась_функція_з_пакета())
+    print(someFunctionFromThePackage())
 }
 ```
 
-Без аргументу `nx install` ставить усе, що вже перелічено в `nx.json`
-поточної папки.
+Without an argument, `nx install` installs everything already listed
+in the current folder's `nx.json`.
 
-## Пісочниця для ненадійного коду
+## Sandbox for untrusted code
 
-Якщо `.nx`-скрипт запускається від імені твого сервісу (напр. код,
-згенерований ШІ) — `NX_SANDBOX=1 nx script.nx` обмежує файловий
-доступ поточною директорією і повністю забороняє мережу та читання
-змінних середовища. Вимкнено за замовчуванням.
+If a `.nx` script runs under your service's identity (e.g. AI-generated
+code) — `NX_SANDBOX=1 nx script.nx` restricts file access to the current
+directory and fully blocks network access and reading environment
+variables. Off by default.
 
-## Синтаксис мови
+## Language syntax
 
-Повний опис — [GUIDE.md](GUIDE.md): змінні, функції, замикання, структури,
-мапи, масиви, цикли (`break`/`continue` включно), `try/catch`, `import`,
-функції вищого порядку, GUI, HTTP-сервер, графіка.
+Full reference — [GUIDE.md](GUIDE.md): variables, functions, closures,
+structs, maps, arrays, loops (including `break`/`continue`), `try/catch`,
+`import`, higher-order functions, GUI, HTTP server, graphics.
