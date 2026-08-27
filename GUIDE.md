@@ -441,7 +441,7 @@ closeCanvas(canvas)
 - `readFile(path)`, `writeFile(path, content)`, `appendFile(path, content)`, `fileExists(path)`, `readLines(path)` - робота з файлами
 - `deleteFile(path)`, `makeDir(path)`, `dirExists(path)`, `deleteDir(path)` (рекурсивно), `listDir(path)` (масив імен файлів/тек усередині) - файли й теки
 - `zipCreate(zipPath, sourceDir)` - запакувати теку в архів; `zipExtract(zipPath, destDir)` - розпакувати ввесь архів, повертає кількість файлів; `zipEntries(zipPath)` - список імен файлів усередині БЕЗ розпаковування; `zipExtractEntry(zipPath, entryName, destPath)` - витягнути лише один файл, повертає `true`/`false` (є така точка в архіві?)
-- `toString(v)`, `toInt(v)`, `toDouble(v)`, `typeOf(v)`, `isNumber/isString/isArray/isBool(v)` - перетворення та перевірка типів
+- `toString(v)`, `toInt(v)`, `toDouble(v)`, `typeOf(v)`, `isNumber/isString/isArray/isBool(v)` - перетворення та перевірка типів. Числові рядки завжди парсяться з "." як десятковим роздільником незалежно від локалі ОС, на якій запущено `Nx` (процес примусово стартує з `CultureInfo.InvariantCulture`) - `toDouble("0.083")` дає однаковий результат що на en-US, що на uk-UA машині
 - `charCode(s)` - код першого символу рядка (наприклад, `charCode("A")` -> 65); `fromCharCode(code)` - символ за кодом
 - `len(v)`, `substring(s,start,len)`, `replace/toUpper/toLower/contains/startsWith/endsWith(s,...)`, `split(s,sep)`, `join(arr,sep)` - рядки
 - `trim(s)` - прибирає пробіли з обох боків; `repeat(s,n)` - повторює рядок n разів
@@ -482,10 +482,12 @@ closeCanvas(canvas)
 - `guiWindow(title, w, h)`, `guiButton(text, x, y, w, h)`, `guiShow(win)` - GUI (експериментально)
 
 ## Як запустити
-Після встановлення (див. INSTALL.md) команда `nx` доступна на будь-якій
+Після встановлення (див. README.md) команда `nx` доступна на будь-якій
 платформі (Windows/Linux/Mac) — передайте шлях до файлу:
 `nx program.nx`
 
 Інші команди:
 - `nx format program.nx` - вивести відформатований код
 - `nx lint program.nx` - перевірити код на типові помилки (невикористані змінні, задовгі рядки, порожні блоки)
+- `nx check program.nx` - лише Lexer+Parser (без Compiler/VM) - "чи взагалі валідний синтаксис", без побічних ефектів; виводить `OK` або `Parse Error: ...`
+- `nx ast program.nx` - AST у канонічній JSON-схемі `{"type","line","attributes","children"}` (`AstJsonDumper.cs`) - той самий формат, що видає `PhpProvider` в [anylint](https://github.com/Faneraiy14/anylint) із дерева `nikic/php-parser`, тож структурні правила аналізатора (dead-code-after-return, empty-catch) працюють на `.nx`-файлах без жодної зміни свого коду через `NyxilumProvider`
