@@ -17,16 +17,15 @@ var nothing = null       // isNull(nothing) -> true
 ```
 
 ### Strings and Interpolation
-Concatenation with `+` works with any type — a number/bool/null is
+Concatenation with `+` works with any type — numbers/bools/null are
 automatically converted to a string:
 ```nx
 var age = 20
 print("I am " + age + " years old")   // I am 20 years old
 ```
 
-For more complex strings, `${expr}` interpolation is more convenient —
-it can contain any NyxilumLang expression inside (a variable, arithmetic,
-a function call):
+For more complex strings, interpolation `${expr}` is more convenient —
+inside can be any NyxilumLang expression (variable, arithmetic, function call):
 ```nx
 var name = "Anna"
 var age = 20
@@ -34,17 +33,17 @@ print("Hello, ${name}! You are ${age} ${age + 1 - 1} years old.")
 print("Doubled: ${age * 2}")
 ```
 This isn't a separate runtime feature — the compiler expands `"a${b}c"`
-into plain `"a" + b + "c"` already at the lexer stage, so it works
-everywhere `+` does, with no restrictions.
+into plain `"a" + b + "c"` at the lexer stage, so it works anywhere `+`
+does, with no restrictions.
 
-To keep `${` from being treated as the start of an interpolation and have
-it stay plain text — escape the dollar sign: `\${`.
+To keep `${` from being treated as the start of an interpolation and leave
+it as plain text — escape the dollar sign: `\${`.
 ```nx
 print("Price: \${not interpolation}")   // Price: ${not interpolation}
 ```
 
 ### Functions
-Functions are declared with `func`. The entry point is the `main` function.
+Functions are declared using `func`. The entry point is the `main` function.
 ```nx
 func add(a, b) {
     return a + b
@@ -57,11 +56,11 @@ func main() {
 ```
 
 A `func` can also be declared inside another function — visible only
-within its "parent" (lexically, as in most languages): the same name in
+within that "parent" (lexically, as in most languages): the same name in
 different "parents" doesn't conflict, each calls its own. This is not a
-closure — the nested function doesn't see the parent's local variables;
-capturing the environment needs an anonymous lambda (`var f = func() {...}`,
-covered below).
+closure — the nested function can't see the parent's local variables;
+capturing the environment requires an anonymous lambda (`var f = func()
+{...}`, section below).
 
 ```nx
 func outer() {
@@ -86,7 +85,7 @@ for i in 0..5 {
 }
 
 for item in [10, 20, 30] {
-    print(item)     // iterate over array elements (no manual index)
+    print(item)     // iterates over array elements (no manual index needed)
 }
 
 while (x > 0) {
@@ -114,9 +113,9 @@ func main() {
 }
 ```
 
-Struct fields must have a type (`x: i32`, not just `x`); a method is
-`func Struct.method(...)` declared separately from `struct`; access to
-the current instance is `self`, not `this`.
+Struct fields must have a type (`x: i32`, not just `x`), a method is
+`func Struct.method(...)` declared separately from the `struct` block,
+and access to the current instance is `self`, not `this`.
 
 ### Inheritance (extends, super)
 ```nx
@@ -124,12 +123,12 @@ struct Animal {
     name: string
 
     func speak() {
-        print(self.name + " makes some sound.")
+        print(self.name + " makes some kind of sound.")
     }
 
-    // self.speak() here finds the most-derived override —
+    // self.speak() here will find the most DERIVED override —
     // polymorphism: dispatch always follows self's ACTUAL type,
-    // not where the calling method happens to be declared.
+    // not wherever the calling method happens to be declared.
     func introduce() {
         print("This is " + self.name + ".")
         self.speak()
@@ -147,25 +146,24 @@ func main() {
     var dog = Dog { name: "Rex" }
     dog.introduce()
     // This is Rex.
-    // Rex makes some sound.
+    // Rex makes some kind of sound.
     // Rex barks: Woof!
 }
 ```
 
 `extends Parent` gives a struct access to all of the ancestor's methods
-(and the ancestor's ancestors — the chain is unbounded) that it doesn't
+(and its ancestors' ancestors — the chain is unlimited) that it doesn't
 override itself. An overridden method fully replaces the parent's for
 instances of the child struct; `super.method(...)` inside an override
-calls the parent's implementation specifically, bypassing the override
-(otherwise it would be infinite recursion).
+calls SPECIFICALLY the parent implementation, bypassing the override
+(otherwise you'd get infinite recursion).
 
-What's deliberately absent (to keep the language from bloating): access
+What's deliberately NOT there (to avoid bloating the language): access
 modifiers (`private`/`public` — all fields and methods are public),
-multiple inheritance, abstract structs/interfaces. Ancestor and
-descendant fields are just keys of a single dictionary — there's no
-separate declaration of "inherited fields": `Dog { name: "Rex" }` already
-gets everything both Dog's own methods and the ones inherited from
-Animal expect.
+multiple inheritance, abstract structs/interfaces. Ancestor and descendant
+fields are just keys in the same dictionary — there's no separate
+declaration of "inherited fields": `Dog { name: "Rex" }` already gets
+everything both Dog's own methods and the ones inherited from Animal expect.
 
 ### Error Handling (try/catch/throw)
 ```nx
@@ -185,20 +183,20 @@ func main() {
 }
 ```
 `try`/`catch` catches both an explicit `throw` and internal VM errors
-(array out-of-bounds, native function errors, etc.) — the program doesn't
-crash, execution just continues from the catch block.
+(out-of-bounds array access, native function errors, etc.) — the program
+doesn't crash, execution just continues from the catch block.
 
 ### Maps/Dictionaries
 ```nx
 var ages = newMap()
 mapSet(ages, "Sviatoslav", 14)
 print(mapGet(ages, "Sviatoslav"))       // 14
-print(mapHas(ages, "Bogdan"))           // false
+print(mapHas(ages, "Bohdan"))          // false
 mapRemove(ages, "Sviatoslav")
 var keys = mapKeys(ages)
 ```
-A map is a type separate from `struct` (`typeOf()` returns `"map"`); a
-key can be a number, string, or bool.
+A map is a distinct type from `struct` (`typeOf()` returns `"map"`), and
+a key can be a number, string, or bool.
 
 ### Functions as Values and Closures
 ```nx
@@ -207,10 +205,10 @@ func square(x) { return x * x }
 func apply(fn, x) { return fn(x) }
 
 func main() {
-    print(apply(square, 5))              // 25 - a named function as a value
+    print(apply(square, 5))              // 25 - named function as a value
 
     var double_ = func(x) { return x * 2 }
-    print(double_(21))                   // 42 - an anonymous function (lambda)
+    print(double_(21))                   // 42 - anonymous function (lambda)
 
     var makeAdder = func(n) {
         return func(x) { return x + n }  // closure - captures n
@@ -219,9 +217,9 @@ func main() {
     print(add5(10))                      // 15
 }
 ```
-Closures capture the values of outer variables **as a copy at the moment
-the lambda is created** (not a live reference) — changing the outer
-variable after the lambda is created doesn't affect it.
+Closures capture outer variables' values **as a copy at the moment the
+lambda is created** (not a live reference) — changing the outer variable
+after the lambda is created has no effect on it.
 
 ### Modules (import)
 ```nx
@@ -239,45 +237,31 @@ func main() {
 The path in `import` is relative to the importing file. Circular and
 repeated imports are safe (each file is processed once).
 
-Selective import — pulls in only the listed functions/structs/globals,
-not the whole file:
+Selective import — pulls in only the listed functions/structs/global
+variables, not the whole file:
 ```nx
 import "math_helpers.nx" { square }
 
 func main() {
-    print(square(5))   // 25 - cube() from the same file stays un-imported
+    print(square(5))   // 25 - cube() from the same file stays unimported
 }
 ```
-Methods of a named struct are pulled in automatically along with it. If a
-listed name isn't found in the file — it's an error immediately at
-startup (before any code runs). Functions whose name starts with `_`
-(e.g. `_helper`) are treated as private module helpers and are always
+A named struct's methods are pulled in automatically along with it. If a
+listed name doesn't exist in the file — that's an error right at startup
+(before the code even runs). Functions whose name starts with `_` (e.g.
+`_helper`) are treated as the module's private helpers and are always
 pulled in, even if not listed — so a public function from the same file
-can call its internal helper regardless of what the caller actually
-imports.
+can call its internal helper regardless of what the caller actually imports.
 
 ### Standard Library (`lib/`)
-The `lib/` folder at the repository root holds ready-made `.nx` modules —
-pulled in with a regular `import` by relative path (`../lib/...` from a
-file under `tests/`, or `lib/...` if the script sits next to `lib/`
-itself):
+The `lib/` directory at the repo root contains ready-made `.nx` modules —
+pulled in with a regular `import` using a relative path (`../lib/...` from
+a file in `tests/`, or `lib/...` if the script sits next to `lib/` itself):
 
-- **`lib/datetime.nx`** — date arithmetic with correct leap years (Howard
-  Hinnant's algorithm, pure NyxilumLang): `daysFromCivil(y,m,d)`/`civilFromDays(z)`
-  (date <-> days since epoch), `isLeapYear(y)`, `dayOfWeek(y,m,d)` (0=Sunday),
-  `dayName(weekday)`, `addDays(y,m,d,n)`, `diffDays(y1,m1,d1,y2,m2,d2)`,
-  `formatDate(y,m,d)`, `parseDate(s)`, `todayCivil()`.
-- **`lib/strings.nx`** — `capitalize(s)`, `titleCase(s)`, `isBlank(s)`,
-  `isEmpty(s)`, `padLeft(s, len, ch)`, `padRight(s, len, ch)`,
-  `countOccurrences(s, sub)`.
-- **`lib/collections.nx`** — `range(n)`, `rangeFrom(start, end)`, `sum(arr)`,
-  `first(arr)`, `last(arr)`, `flatten(arr)` (one level), `zip(arr1, arr2)`,
-  `chunk(arr, size)`, `count(arr, fn)`.
-- **`lib/testing.nx`** — `assertTrue(cond, msg)`, `assertFalse(cond, msg)`,
-  `assertEqual(actual, expected, msg)`, `assertThrows(fn, msg)`. A failure
-  is just a regular `throw`, so either catch it yourself with `try/catch`,
-  or leave it uncaught so the process exits with a non-zero code (handy
-  for CI).
+- **`lib/datetime.nx`** — date arithmetic with correct leap years (Howard Hinnant's algorithm, pure NyxilumLang): `daysFromCivil(y,m,d)`/`civilFromDays(z)` (date <-> days since epoch), `isLeapYear(y)`, `dayOfWeek(y,m,d)` (0=Sunday), `dayName(weekday)`, `addDays(y,m,d,n)`, `diffDays(y1,m1,d1,y2,m2,d2)`, `formatDate(y,m,d)`, `parseDate(s)`, `todayCivil()`.
+- **`lib/strings.nx`** — `capitalize(s)`, `titleCase(s)`, `isBlank(s)`, `isEmpty(s)`, `padLeft(s, len, ch)`, `padRight(s, len, ch)`, `countOccurrences(s, sub)`.
+- **`lib/collections.nx`** — `range(n)`, `rangeFrom(start, end)`, `sum(arr)`, `first(arr)`, `last(arr)`, `flatten(arr)` (one level), `zip(arr1, arr2)`, `chunk(arr, size)`, `count(arr, fn)`, `find(arr, fn)` (first match or `null`), `findIndex(arr, fn)` (index of first match or `-1`), `every(arr, fn)`, `some(arr, fn)`.
+- **`lib/testing.nx`** — `assertTrue(cond, msg)`, `assertFalse(cond, msg)`, `assertEqual(actual, expected, msg)`, `assertThrows(fn, msg)`. A failure is just a regular `throw`, so either catch it yourself with `try/catch`, or leave it uncaught so the process exits with a non-zero code (handy for CI).
   ```nx
   import "lib/testing.nx" { assertEqual }
 
@@ -286,11 +270,7 @@ itself):
       print("test passed")
   }
   ```
-- **`lib/http_client.nx`** — a wrapper over `httpGet`/`httpPost`/`httpRequest`
-  with automatic JSON serialization (in the spirit of Python's `requests`
-  library): `getJson(url)`, `postJson(url, data)`, `requestJson(url, method, data)`
-  (`data` — a map/array or `null`), `requestStatus(url, method, data)` — the
-  status code only.
+- **`lib/http_client.nx`** — a wrapper over `httpGet`/`httpPost`/`httpRequest` with automatic JSON serialization (in the spirit of Python's `requests` library): `getJson(url)`, `postJson(url, data)`, `requestJson(url, method, data)` (`data` — a map/array or `null`), `requestStatus(url, method, data)` — status code only.
   ```nx
   import "lib/http_client.nx" { postJson }
 
@@ -301,14 +281,7 @@ itself):
       print(toJson(response))
   }
   ```
-- **`lib/telegram.nx`** — a wrapper over the
-  [Telegram Bot API](https://core.telegram.org/bots/api) (plain HTTPS+JSON,
-  no WebSocket — so it's fully implemented in NyxilumLang itself):
-  `tgGetMe(token)`, `tgSendMessage(token, chatId, text)`, `tgGetUpdates(token, offset)`,
-  `tgMessageText(update)`, `tgChatId(update)`, and a blocking `tgPollLoop(token, handler)`
-  for a ready-made bot in one call. Read the token via
-  `osEnv("TELEGRAM_BOT_TOKEN")`, never hardcode it in the script. A full
-  working echo-bot example: `programs/telegram_echo_bot.nx`.
+- **`lib/telegram.nx`** — a wrapper over the [Telegram Bot API](https://core.telegram.org/bots/api) (plain HTTPS+JSON, no WebSocket — so it's fully implemented in NyxilumLang itself): `tgGetMe(token)`, `tgSendMessage(token, chatId, text)`, `tgGetUpdates(token, offset)`, `tgMessageText(update)`, `tgChatId(update)`, and a blocking `tgPollLoop(token, handler)` for a ready-made bot in a single call. Read the token via `osEnv("TELEGRAM_BOT_TOKEN")`, never hardcode it in the script. Full working echo-bot example: `programs/telegram_echo_bot.nx`.
   ```nx
   import "lib/telegram.nx" { tgPollLoop, tgMessageText, tgChatId, tgSendMessage }
 
@@ -322,17 +295,7 @@ itself):
       })
   }
   ```
-- **`lib/discord.nx`** — a minimal
-  [Discord Gateway](https://discord.com/developers/docs/topics/gateway)
-  client: `dSendMessage(token, channelId, text)` (REST), and a blocking
-  `dPollLoop(token, intents, handler)` — it performs the handshake itself
-  (Hello -> Identify -> heartbeat on the server's schedule) via the native
-  `wsConnect`/`wsSend`/`wsReceive`, and `handler(eventName, data)` is
-  called for every event (`"MESSAGE_CREATE"`, `"READY"`, etc.). On a
-  server-initiated disconnect (e.g. an invalid token — code 4004) it exits
-  the loop with a clear message instead of hanging or crashing. The token
-  comes from `osEnv("DISCORD_BOT_TOKEN")`. Full example:
-  `programs/discord_echo_bot.nx`.
+- **`lib/discord.nx`** — a minimal [Discord Gateway](https://discord.com/developers/docs/topics/gateway) client: `dSendMessage(token, channelId, text)` (REST), and a blocking `dPollLoop(token, intents, handler)` — handles the handshake itself (Hello -> Identify -> heartbeat on the server's schedule) via native `wsConnect`/`wsSend`/`wsReceive`, with `handler(eventName, data)` invoked on every event (`"MESSAGE_CREATE"`, `"READY"`, etc.). On a server-initiated disconnect (e.g. an invalid token — code 4004), it exits the loop with a clear message instead of hanging or crashing. Token via `osEnv("DISCORD_BOT_TOKEN")`. Full example: `programs/discord_echo_bot.nx`.
   ```nx
   import "lib/discord.nx" { dPollLoop, dSendMessage }
 
@@ -345,8 +308,7 @@ itself):
       })
   }
   ```
-  Don't forget to enable "Message Content Intent" in the Discord Developer
-  Portal — without it `content` is always empty.
+  Don't forget to enable "Message Content Intent" in the Discord Developer Portal — without it, `content` is always empty.
 
 ### Higher-Order Functions and JSON
 ```nx
@@ -364,12 +326,12 @@ var back = fromJson("[1,2,3]")   // array
 
 ### Concurrency
 
-`spawn(fn, ...args)` runs a function value on a new, fully isolated VM
-on a separate thread — its own stack, its own globals, the same bytecode.
-No shared mutable state with the caller or other workers whatsoever:
-everything passed into `spawn()` (arguments, values captured by the
-lambda via closure) is deep-copied at the boundary — mutating an
-array/map/struct on the main thread AFTER spawn has no effect on the
+`spawn(fn, ...args)` launches a function value on a brand-new, fully
+isolated VM in a separate thread — its own stack, its own globals, the
+same bytecode. There's zero shared mutable state with the caller or other
+workers: everything that goes into `spawn()` (arguments, values, anything
+captured by a lambda's closure) is deep-copied at the boundary — mutating
+an array/map/struct on the main thread AFTER spawning has no effect on the
 already-running worker, and vice versa.
 
 ```nx
@@ -384,26 +346,25 @@ func main() {
 ```
 
 `workerJoin(worker)` blocks the caller until the worker finishes, and
-returns its result. If the worker finished with an uncaught error,
-`workerJoin` re-throws it, and it can be caught with a regular
-`try/catch`.
+returns its result. If the worker terminated with an unhandled error,
+`workerJoin` re-throws it, and it can be caught with a regular `try/catch`.
 
-`workerJoin(worker, timeoutMs)` — with a wait time limit: if the worker
-doesn't finish within that time, it throws an error (rather than
-returning `null` — the worker could legitimately return `null` itself
-as its result, so `null` doesn't work as a timeout marker). The worker
-itself does NOT stop — we simply stop waiting for it; `workerJoin` can
-be called again later to collect the result once it actually finishes:
+`workerJoin(worker, timeoutMs)` — with a wait-time limit: if the worker
+doesn't finish in time, it throws an error (rather than returning `null` —
+the worker could legitimately have returned `null` itself as a result, so
+`null` doesn't work as a timeout marker). The worker itself does NOT
+stop — we simply stop waiting for it; `workerJoin` can be called again
+later to pick up the result once it does finish:
 
 ```nx
 var w = spawn(slowTask)
 try {
     print(workerJoin(w, 100))
 } catch (e) {
-    print("not ready yet, we'll try again later")
+    print("not ready yet, will try again later")
 }
 // ... other work ...
-print(workerJoin(w))   // no timeout — wait it out for good
+print(workerJoin(w))   // no timeout — wait for it to finish for good
 ```
 
 Multiple workers at once:
@@ -422,8 +383,8 @@ while i < len(workers) {
 }
 ```
 
-Channels — for communication BETWEEN workers (not just "spawn it and
-grab the result at the end"):
+Channels — for communication BETWEEN workers (not just "start it and grab
+the result at the end"):
 ```nx
 var ch = newChannel()
 
@@ -446,30 +407,30 @@ func main() {
 }
 ```
 `channelReceive(ch, timeoutMs)` — with a timeout: returns `null` if
-nothing arrived within the given time, instead of blocking forever.
+nothing arrived within the allotted time, instead of blocking forever.
 
-Values passed through `channelSend` are deep-copied too — the same
-"shared nothing" principle as in `spawn()`.
+Values passed through `channelSend` are also deep-copied — the same
+"shared nothing" principle as `spawn()`.
 
-**GUI/graphics from a worker.** `guiSetText`/`guiAdd`/`guiShow`/`presentCanvas`/
-`closeCanvas` and similar (anything that touches an already-created
-window) can only be called from the main thread — Windows Forms requires
-this. Calling one from a worker throws a clear error rather than
-crashing or corrupting the window's state. For a worker to affect the
-GUI — have it return a result via `workerJoin` or send one over a
-channel, and update the GUI itself from the main thread:
+**GUI/graphics from a worker.** `guiSetText`/`guiAdd`/`guiShow`/
+`presentCanvas`/`closeCanvas` and similar (anything that touches an
+already-created window) can only be called from the main thread — Windows
+Forms requires this. Calling one from a worker throws a clear error
+instead of crashing or corrupting the window's state. For a worker to
+affect the GUI — have it return the result via `workerJoin` or send it
+over a channel, and update the GUI itself from the main thread:
 
 ```nx
 func heavyCalculation() {
-    // ... a long calculation with no GUI ...
+    // ... long computation without any GUI ...
     return 42
 }
 
 func main() {
     var label = guiLabel("Calculating...", 10, 10, 200, 30)
     var w = spawn(heavyCalculation)
-    var result = workerJoin(w)     // main thread waits and grabs the result
-    guiSetText(label, toString(result))  // GUI is updated here, from the main thread
+    var result = workerJoin(w)     // main thread waits and picks up the result
+    guiSetText(label, toString(result))  // GUI is updated here, on the main thread
 }
 ```
 
@@ -488,68 +449,68 @@ while frame < 60 {
 }
 closeCanvas(canvas)
 ```
-3D is built on top of the same canvas: rotating points via `sin`/`cos`
-(already built in), and `project3D(canvas, x, y, z, camDistance)`
-converts a 3D coordinate into a 2D screen point — then you draw edges
-with `drawLine`. Input: `isKeyDown("W")`, `isMouseDown(canvas)`,
+3D is done on top of the same canvas: rotating points via `sin`/`cos`
+(already built in), and `project3D(canvas, x, y, z, camDistance)` turns a
+3D coordinate into a 2D screen point — then you draw the edges with
+`drawLine`. Input: `isKeyDown("W")`, `isMouseDown(canvas)`,
 `getMouseX/Y(canvas)`, `canvasShouldClose(canvas)`.
 
 ### Built-in Functions
 - `print(val)` - console output
-- `readLine()`, `readInt()`, `readDouble()` - console input
+- `readLine()`, `readInt()`, `readDouble()` - read from the console
 - `sqrt(x)`, `sin(x)`, `cos(x)`, `tan(x)`, `pow(x,y)`, `abs(x)`, `round/floor/ceil(x)`, `clamp(x,min,max)` - math
-- `max/min(a,b)` or `max/min(arr)` - max/min of two numbers or an entire array
-- `toFixed(x,n)` - a number as a string with n decimal places, e.g. `toFixed(3.14159, 2)` -> `"3.14"`
-- `readFile(path)`, `writeFile(path, content)`, `appendFile(path, content)`, `fileExists(path)`, `readLines(path)` - file I/O
-- `deleteFile(path)`, `makeDir(path)`, `dirExists(path)`, `deleteDir(path)` (recursive), `listDir(path)` (array of file/folder names inside) - files and folders
-- `zipCreate(zipPath, sourceDir)` - pack a folder into an archive; `zipExtract(zipPath, destDir)` - unpack the whole archive, returns the file count; `zipEntries(zipPath)` - list of file names inside WITHOUT unpacking; `zipExtractEntry(zipPath, entryName, destPath)` - extract just one file, returns `true`/`false` (does that entry exist in the archive?)
-- `toString(v)`, `toInt(v)`, `toDouble(v)`, `typeOf(v)`, `isNumber/isString/isArray/isBool(v)` - conversion and type checking. Numeric strings are always parsed with "." as the decimal separator regardless of the OS locale `Nx` runs on (the process forcibly starts with `CultureInfo.InvariantCulture`) - `toDouble("0.083")` gives the same result on both an en-US and a uk-UA machine
-- `charCode(s)` - the code of a string's first character (e.g. `charCode("A")` -> 65); `fromCharCode(code)` - the character for a code
+- `max/min(a,b)` or `max/min(arr)` - maximum/minimum of two numbers or of an entire array
+- `toFixed(x,n)` - number as a string with n digits after the decimal point, e.g. `toFixed(3.14159, 2)` -> `"3.14"`
+- `readFile(path)`, `writeFile(path, content)`, `appendFile(path, content)`, `fileExists(path)`, `readLines(path)` - file operations
+- `deleteFile(path)`, `makeDir(path)`, `dirExists(path)`, `deleteDir(path)` (recursive), `listDir(path)` (array of file/directory names inside) - files and directories
+- `zipCreate(zipPath, sourceDir)` - packs a directory into an archive; `zipExtract(zipPath, destDir)` - extracts the whole archive, returns the file count; `zipEntries(zipPath)` - list of filenames inside WITHOUT extracting; `zipExtractEntry(zipPath, entryName, destPath)` - extracts just one file, returns `true`/`false` (does that entry exist in the archive?)
+- `toString(v)`, `toInt(v)`, `toDouble(v)`, `typeOf(v)`, `isNumber/isString/isArray/isBool(v)` - type conversion and checking. Numeric strings are always parsed with "." as the decimal separator regardless of the OS locale `Nx` runs under (the process forcibly starts with `CultureInfo.InvariantCulture`) - `toDouble("0.083")` gives the same result on an en-US machine as on a uk-UA one
+- `charCode(s)` - the code of a string's first character (e.g. `charCode("A")` -> 65); `fromCharCode(code)` - the character for a given code
 - `len(v)`, `substring(s,start,len)`, `replace/toUpper/toLower/contains/startsWith/endsWith(s,...)`, `split(s,sep)`, `join(arr,sep)` - strings
 - `trim(s)` - strips whitespace from both ends; `repeat(s,n)` - repeats the string n times
-- `utf8ByteCount(s)` - the string's actual size in UTF-8 bytes. `len(s)` counts characters (.NET `string.Length`, UTF-16 code units), NOT bytes — for Cyrillic/emoji that's roughly half the size the string will actually take on disk or over the network (everything is encoded as UTF-8). A size limit like `if (len(text) > MAX_BYTES)` systematically lets through twice as much Cyrillic text as intended — for a real byte-based limit, use this function specifically
+- `utf8ByteCount(s)` - the string's real size in UTF-8 bytes. `len(s)` counts characters (.NET `string.Length`, UTF-16 code units), NOT bytes - for Cyrillic/emoji that's almost half the size the string actually takes up on disk or over the network (everything is encoded as UTF-8). A size limit like `if (len(text) > MAX_BYTES)` will systematically let through twice as much Cyrillic text as intended - use this function specifically for a real byte-based limit
 - `indexOf(v,item)` - the position of an element/substring (-1 if not found); works for both strings and arrays
 - `reverse(v)` - reverses a string or array (doesn't mutate the original array)
 - `append(arr,v)`, `pop(arr)`, `insert(arr,i,v)`, `removeAt(arr,i)`, `clear(arr)` - arrays
-- `slice(arr,start,end?)` - a subarray from start to end (or to the end); `unique(arr)` - removes duplicates, preserves order
+- `slice(arr,start,end?)` - a sub-array from start to end (or to the end); `unique(arr)` - removes duplicates, keeps order
 - `newMap()`, `mapSet(m,k,v)`, `mapGet(m,k)`, `mapHas(m,k)`, `mapRemove(m,k)`, `mapKeys(m)`, `mapValues(m)` - maps/dictionaries
 - `sort(arr,cmp)`, `mapArr(arr,fn)`, `filter(arr,fn)`, `reduce(arr,fn,init)` - higher-order functions over arrays
 - `toJson(v)`, `fromJson(str)` - serialization to JSON and back
-- `sleep(ms)` - pause execution
-- `exit(code)` - immediately terminates the process with the given exit code (lines of code after exit() never run) - for CI/scripts that need a specific code (0 for success, anything else for failure), without an artificial throw (which always yields code 1)
-- `gc_stats()` - a struct `{allocated, limit, bytesEstimate}` tracking NyxilumLang allocations (arrays/structs/maps) for the current run; `gc_collect()` - forces .NET garbage collection and refreshes the memory estimate; `gc_limit(n)` - sets the allocation-count limit, exceeding it throws an error (can be caught with `try/catch`, or set externally via `NX_GC_MAX_OBJECTS`). Does NOT protect against infinite recursion that allocates nothing (no arrays/structs/maps) - there's a separate call-depth limit for that below
+- `sleep(ms)` - pauses execution
+- `exit(code)` - immediately terminates the process with the given exit code (lines of code after exit() are never executed) - for CI/scripts that need a specific code (0 for success, anything else for failure), without an artificial throw (which always yields code 1)
+- `gc_stats()` - the struct `{allocated, limit, bytesEstimate}` tracking NyxilumLang allocations (arrays/structs/maps) for the current run; `gc_collect()` - forces .NET garbage collection and refreshes the memory estimate; `gc_limit(n)` - sets the allocation-count limit, exceeding it throws an error (can be caught with `try/catch`, or set externally via `NX_GC_MAX_OBJECTS`). Does NOT protect against infinite recursion that allocates nothing (no arrays/structs/maps) - there's a separate call-depth limit for that below.
 - Call depth is capped at 10,000 (func, struct method, function value) - a function with no exit condition (e.g. `func f(n) { return f(n+1) }`) throws a `try/catch`-catchable error instead of unbounded memory growth all the way to OOM
 - Nesting depth of expressions/blocks and operator-chain length are capped (500) - overly deep parentheses/calls/`if` blocks, or long chains of `+`, `!`, `=`, etc. throw a Runtime Error already at the file-parsing stage, rather than a native stack overflow (which can't be caught by any try/catch, neither in NyxilumLang nor in .NET)
-- `dbOpen(path)` - opens (or creates) a persistent KV database [NyxilumDb](https://github.com/Faneraiy14/NyxilumDb) in the folder at `path`; `dbSet(db,k,v)`, `dbGet(db,k)` (a string or `null`), `dbHas(db,k)`, `dbDelete(db,k)` - values in v1 are strings only; `dbKeys(db,prefix?)` - an array of keys (optionally by prefix); `dbCount(db)`; `dbCheckpoint(db)` - forces compaction; `dbClose(db)` - closes the database (compacts the WAL if it's non-empty)
+- `dbOpen(path)` - opens (or creates) a persistent [NyxilumDb](https://github.com/Faneraiy14/NyxilumDb) KV store in the directory at `path`; `dbSet(db,k,v)`, `dbGet(db,k)` (string or `null`), `dbHas(db,k)`, `dbDelete(db,k)` - values in v1 are strings only; `dbKeys(db,prefix?)` - array of keys (optionally filtered by prefix); `dbCount(db)`; `dbCheckpoint(db)` - forces compaction; `dbClose(db)` - closes the database (compacts the WAL if it's non-empty)
 - `createCanvas(title,w,h)`, `clearCanvas`, `drawRect`, `drawCircle`, `drawLine`, `drawText`, `presentCanvas`, `canvasShouldClose`, `closeCanvas` - 2D graphics
 - `project3D(canvas,x,y,z,camDistance)` - projects a 3D point into 2D for rendering 3D scenes
 - `guiWindow(title,w,h)`, `guiLabel(text,x,y,w,h)`, `guiButton(text,x,y,w,h)`, `guiTextBox(x,y,w,h)` - Windows Forms windows
-- `guiAdd(parent,child)` - add an element to a window; `guiSetText(control,text)`/`guiGetText(control)` - change/read text
-- `guiOnAction(button,fn)` - call a NyxilumLang function `fn` on click (a regular function value, like in `sort(arr,cmp)` — no parentheses, not a name string)
-- `guiShow(win)` - show a window (blocks until the window is closed)
+- `guiAdd(parent,child)` - adds an element to a window; `guiSetText(control,text)`/`guiGetText(control)` - set/read text
+- `guiOnAction(button,fn)` - invokes the NyxilumLang function `fn` on click (a plain function value, like in `sort(arr,cmp)` — no parentheses, not a name string)
+- `guiShow(win)` - shows the window (blocks until it's closed)
 - `isKeyDown(key)`, `isMouseDown(canvas)`, `getMouseX/Y(canvas)` - input for a window
 - `randomInt(min,max)`, `randomDouble(min,max)`, `now()`, `today()`, `timestamp()` - utilities
 - `formatDate(timestamp, format?)` - converts a Unix timestamp (seconds) into a string in any format (.NET custom date format, e.g. `"dd.MM.yyyy HH:mm"`); without `format` - the same look as `now()`; `parseDate(str, format)` - the reverse operation, a formatted string back into a Unix timestamp; throws an error if the string doesn't match the format
 - `osPlatform()`, `osArchitecture()`, `osMemory()`, `osCpuCount()`, `osEnv(name)`, `osCwd()` - system information
-- `osProcessList()` - an array of all OS processes (not just child ones, unlike `procRun`/`procStart`), each `{pid, name, memMB, cpuPercent}`; `cpuPercent` is computed like `top`/`htop` does — two `TotalProcessorTime` samples with a ~200ms pause between them, so the call isn't instantaneous. Processes that exited between the two samples are simply skipped, not treated as a failure
+- `osProcessList()` - array of every OS process (not just child ones like `procRun`/`procStart`), each `{pid, name, memMB, cpuPercent}`; `cpuPercent` is computed the way `top`/`htop` do it - two `TotalProcessorTime` samples with a ~200ms pause between them, so the call isn't instant. Processes that exited between the two samples are simply skipped, they don't fail the call
 - `osDiskFree(path?)` - `{freeGB, totalGB}` for the volume containing `path` (defaults to the current directory)
-- `notify(title, message)` - a native OS push notification (not the app's own window — an actual popup over all windows, like a messenger app): `notify-send` on Linux, `osascript` on macOS, a `NotifyIcon` balloon via PowerShell on Windows
-- `procStart(cmd, args?, options?)` - launches an external OS process and returns a handle immediately, WITHOUT waiting for it to finish (`args` - an array of strings, `options` - a map with `cwd`/`env`); `procRun(cmd, args?, options?)` - the same, but BLOCKS until it finishes and returns the map `{exitCode, stdout, stderr}`; `procWait(h)` - waits for an already-started `procStart` process to finish, returns the exit code; `procIsRunning(h)`, `procKill(h)`, `procPid(h)`, `procExitCode(h)` (`null` while the process is still running); `procOutput(h)`/`procErrorOutput(h)` - everything the process has written to stdout/stderr SO FAR (can be re-read repeatedly while the process is still running). Always forbidden in the sandbox (`NX_SANDBOX=1`)
+- `notify(title, message)` - a native OS push notification (not the app's own window - a real bubble on top of everything else, like in messenger apps): `notify-send` on Linux, `osascript` on macOS, a `NotifyIcon` balloon via PowerShell on Windows
+- `procStart(cmd, args?, options?)` - launches an external OS process and returns a handle right away, NOT waiting for completion (`args` - array of strings, `options` - a map with `cwd`/`env`); `procRun(cmd, args?, options?)` - the same, but BLOCKS until completion and returns the map `{exitCode, stdout, stderr}`; `procWait(h)` - waits for an already-started `procStart` to finish, returns the exit code; `procIsRunning(h)`, `procKill(h)`, `procPid(h)`, `procExitCode(h)` (`null` while the process is still running); `procOutput(h)`/`procErrorOutput(h)` - everything the process has written to stdout/stderr SO FAR (can be re-read repeatedly while the process is still running). Always forbidden in the sandbox (`NX_SANDBOX=1`)
 - `httpGet(url)`, `urlStatus(url)` - HTTP requests
 - `httpPost(url, body)` - a POST request with body `body` (Content-Type `application/json`), returns the response body as a string
-- `httpRequest(url, method, body?, headers?)` - a request with any method (`"PUT"`, `"DELETE"`, `"PATCH"`, etc.), returns the map `{status, body}`; `headers` - a map (`newMap`/`mapSet`) for headers like `Authorization`
-- `wsConnect(url)` - opens a WebSocket connection (`wss://`/`ws://`); `wsSend(ws, text)` - sends a text message; `wsReceive(ws, timeoutMs?)` - blocks until the next message or the timeout (in which case it returns `null`, and the connection itself remains fully usable — you can keep calling wsSend/wsReceive/wsClose as normal); throws an error (catch with `try/catch`) if the connection was closed by the server; `wsClose(ws)` - closes the connection (5s timeout waiting for a close frame in response - if the other side doesn't respond, the socket is closed locally regardless, instead of blocking the script forever)
-- `httpServer(port, handler, wsHandler?)` - an HTTP server; `handler(request)` is called for every regular request with a SINGLE map `{path, method, body, query, headers}` (`body` - the POST/PUT request body, `headers` - a map of request headers). The response is either a plain string (status 200, `text/html`) or a map `{status?, body?, contentType?}` for full control. The optional third argument `wsHandler(ws, request)` — requests with `Upgrade: websocket` are accepted as WebSocket connections (the same `ws` as in `wsConnect()` — the same `wsSend`/`wsReceive`/`wsClose` work on it); each connection runs on its own thread with its own VM, so a long-lived WS connection doesn't block other clients from being accepted. Blocks forever (Ctrl+C to stop)
-- `regexTest(s, pattern)` - whether a string matches a regex pattern (bool); `regexMatch(s, pattern)` - the first match or `null`; `regexFindAll(s, pattern)` - an array of all matches; `regexReplace(s, pattern, replacement)` - replaces all matches
+- `httpRequest(url, method, body?, headers?)` - a request with an arbitrary method (`"PUT"`, `"DELETE"`, `"PATCH"`, etc.), returns the map `{status, body}`; `headers` - a map (`newMap`/`mapSet`) for headers like `Authorization`
+- `wsConnect(url)` - opens a WebSocket connection (`wss://`/`ws://`); `wsSend(ws, text)` - sends a text message; `wsReceive(ws, timeoutMs?)` - blocks until the next message or the timeout (in which case it returns `null`, and the connection itself remains fully usable - you can keep calling wsSend/wsReceive/wsClose as normal); throws an error (catch with `try/catch`) if the connection was closed by the server; `wsClose(ws)` - closes the connection (5s timeout waiting for a close frame in response - if the other side doesn't respond, the socket is closed locally regardless, instead of blocking the script forever)
+- `httpServer(port, handler, wsHandler?)` - an HTTP server; `handler(request)` is invoked for every regular request with a SINGLE map `{path, method, body, query, headers}` (`body` - the POST/PUT request body, `headers` - a map of request headers). The response is either a plain string (status 200, `text/html`) or a map `{status?, body?, contentType?}` for full control. The optional third argument `wsHandler(ws, request)` - requests with `Upgrade: websocket` are accepted as WebSocket connections (the same `ws` as in `wsConnect()` - the same `wsSend`/`wsReceive`/`wsClose` work on it); each connection runs on its own thread with its own VM, so a long-lived WS doesn't block other clients from connecting. Blocks forever (Ctrl+C to stop)
+- `regexTest(s, pattern)` - whether the string matches the regex pattern (bool); `regexMatch(s, pattern)` - the first match or `null`; `regexFindAll(s, pattern)` - array of all matches; `regexReplace(s, pattern, replacement)` - replaces all matches
 - `guiWindow(title, w, h)`, `guiButton(text, x, y, w, h)`, `guiShow(win)` - GUI (experimental)
 
 ## How to Run
-After installation (see README.md), the `nx` command is available on any
-platform (Windows/Linux/Mac) — pass the path to a file:
+After installation (see INSTALL.md), the `nx` command is available on any
+platform (Windows/Linux/Mac) — pass it a file path:
 `nx program.nx`
 
 Other commands:
-- `nx format program.nx` - print the formatted code
+- `nx format program.nx` - print formatted code
 - `nx lint program.nx` - check the code for common mistakes (unused variables, overly long lines, empty blocks)
 - `nx check program.nx` - Lexer+Parser only (no Compiler/VM) - "is the syntax even valid", with no side effects; prints `OK` or `Parse Error: ...`
 - `nx ast program.nx` - the AST in the canonical JSON schema `{"type","line","attributes","children"}` (`AstJsonDumper.cs`) - the same format that `PhpProvider` in [anylint](https://github.com/Faneraiy14/anylint) emits from the `nikic/php-parser` tree, so the analyzer's structural rules (dead-code-after-return, empty-catch) work on `.nx` files with zero changes to their own code, via `NyxilumProvider`
