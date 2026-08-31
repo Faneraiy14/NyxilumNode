@@ -92,6 +92,12 @@ jobs:
       # оновити csproj.
       - name: Обчислити версію з тегу
         id: version
+        # windows-latest без явного shell бере PowerShell (pwsh), а не bash -
+        # ${GITHUB_REF_NAME#v} там не працює як обрізання префікса (той самий
+        # клас бага, що вже описаний у кроці "Перевірити, що файли релізу..."
+        # нижче) - без цього версія на Windows виходила порожньою, і
+        # dotnet publish падав з "GetAssemblyVersion... NuGetVersion".
+        shell: bash
         run: echo "number=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Publish self-contained single-file
