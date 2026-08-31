@@ -83,6 +83,17 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # Версія в NyxilumLang.csproj (<Version>) раніше треба було синхронізувати
+      # з тегом релізу ВРУЧНУ - і про це щоразу забували, тому `nx --version`
+      # показував застарілу версію незалежно від того, який реліз NyxilumNode
+      # реально завантажено. Тег ${{ github.ref_name }} (напр. v1.4.0) - єдине
+      # реальне джерело версії цього релізу, тож підставляємо його напряму в
+      # збірку через -p:Version, а не покладаємось на те, що хтось не забуде
+      # оновити csproj.
+      - name: Обчислити версію з тегу
+        id: version
+        run: echo "number=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
       - name: Publish self-contained single-file
         working-directory: NyxilumLang
         run: >
@@ -92,6 +103,7 @@ jobs:
           -p:PublishSingleFile=true
           -p:EnableWindowsTargeting=true
           -p:DebugType=None
+          -p:Version=${{ steps.version.outputs.number }}
           -o ../publish-out
 
       - name: Package (Windows, zip)
