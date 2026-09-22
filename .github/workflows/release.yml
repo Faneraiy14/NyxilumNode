@@ -169,13 +169,31 @@ jobs:
         working-directory: NyxilumNode
         env:
           GH_TOKEN: ${{ github.token }}
+        # РЕАЛЬНИЙ БАГ, знайдений живцем (реліз v1.5.0, 22.09.2026):
+        # checkout цієї job стається НА ПОЧАТКУ job'и, а не одразу перед
+        # push - якщо main тим часом посунувся (напр. попередній реліз
+        # уже щось запушив своїм sync-docs), `git push origin HEAD:main`
+        # падає з "fetch first" (non-fast-forward), і GUIDE.md лишається
+        # несинхронізованим МОВЧКИ (уся job позначається failed, але
+        # реліз-артефакти з попередніх job уже опубліковані - легко не
+        # помітити). Фікс - retry-цикл: fetch+rebase перед КОЖНОЮ спробою
+        # push, а не одна спроба наосліп.
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet -- GUIDE.md; then
-            git add GUIDE.md
-            git commit -m "Автосинхронізація GUIDE.md з NyxilumLang (реліз ${{ github.ref_name }})"
-            git push origin HEAD:main
-          else
+          if git diff --quiet -- GUIDE.md; then
             echo "GUIDE.md уже актуальний — коміт не потрібен"
+            exit 0
           fi
+          git add GUIDE.md
+          git commit -m "Автосинхронізація GUIDE.md з NyxilumLang (реліз ${{ github.ref_name }})"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "push #$attempt відхилено (main посунувся) - fetch+rebase і пробуємо ще раз"
+            git fetch origin main
+            git rebase origin/main
+          done
+          echo "::error::не вдалося запушити GUIDE.md після 5 спроб"
+          exit 1
