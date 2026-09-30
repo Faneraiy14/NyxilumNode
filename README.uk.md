@@ -93,6 +93,28 @@ func main() {
 Без аргументу `nx install` ставить усе, що вже перелічено в `nx.json`
 поточної папки.
 
+## Стандартна бібліотека (`lib/`)
+
+В архіві поруч із `nx` лежить тека `lib/` — готові модулі на самій NyxilumLang:
+`telegram.nx`, `discord.nx`, `http_client.nx`, `postgres.nx` і `mysql.nx`
+(клієнти БД поверх голого TCP), `crypto.nx` (SHA-1/SHA-256/MD5/HMAC/PBKDF2),
+`bytes.nx`, `datetime.nx`, `strings.nx`, `collections.nx`, `testing.nx`.
+Підключаються за шляхом відносно твого файлу (скопіюй `lib/` поруч або
+вкажи шлях до неї):
+
+```nx
+import "lib/postgres.nx"
+
+func main() {
+    var db = pgConnect("postgres://user:pass@localhost:5432/mydb")
+    print(toJson(pgQuery(db, "SELECT now() AS t", [])))
+    pgClose(db)
+}
+```
+
+Модулі, що спираються на власні хелпери (`telegram`, `postgres`, `mysql`,
+`crypto`), підключай повністю — без `{ ... }`. Докладно — у `GUIDE.md`.
+
 ## Пісочниця для ненадійного коду
 
 Якщо `.nx`-скрипт запускається від імені твого сервісу (напр. код,

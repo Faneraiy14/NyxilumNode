@@ -120,6 +120,9 @@ jobs:
           Copy-Item NyxilumNode/README.md publish-out/
           Copy-Item NyxilumNode/GUIDE.md publish-out/
           Copy-Item NyxilumNode/LICENSE publish-out/
+          # стандартна бібліотека .nx (telegram, postgres, mysql, crypto...) -
+          # без неї import "lib/..." працював лише з клоном NyxilumLang
+          Copy-Item -Recurse NyxilumLang/lib publish-out/lib
           Compress-Archive -Path publish-out/* -DestinationPath "Nx-${{ matrix.rid }}.zip"
 
       - name: Package (Linux/Mac, tar.gz)
@@ -129,6 +132,9 @@ jobs:
           cp NyxilumNode/README.md publish-out/
           cp NyxilumNode/GUIDE.md publish-out/
           cp NyxilumNode/LICENSE publish-out/
+          # стандартна бібліотека .nx (telegram, postgres, mysql, crypto...) -
+          # без неї import "lib/..." працював лише з клоном NyxilumLang
+          cp -r NyxilumLang/lib publish-out/lib
           chmod +x "publish-out/${{ matrix.exe }}" publish-out/install-nx.sh
           tar -czf "Nx-${{ matrix.rid }}.${{ matrix.archive_ext }}" -C publish-out .
 

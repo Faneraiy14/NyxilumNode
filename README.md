@@ -94,6 +94,28 @@ func main() {
 Without an argument, `nx install` installs everything already listed
 in the current folder's `nx.json`.
 
+## Standard library (`lib/`)
+
+The archive ships a `lib/` folder next to `nx` — ready-made modules written in
+NyxilumLang itself: `telegram.nx`, `discord.nx`, `http_client.nx`,
+`postgres.nx` and `mysql.nx` (DB clients on top of raw TCP), `crypto.nx`
+(SHA-1/SHA-256/MD5/HMAC/PBKDF2), `bytes.nx`, `datetime.nx`, `strings.nx`,
+`collections.nx`, `testing.nx`. Import them by a path relative to your file
+(copy `lib/` next to it or point at it):
+
+```nx
+import "lib/postgres.nx"
+
+func main() {
+    var db = pgConnect("postgres://user:pass@localhost:5432/mydb")
+    print(toJson(pgQuery(db, "SELECT now() AS t", [])))
+    pgClose(db)
+}
+```
+
+Import modules that rely on their own helpers (`telegram`, `postgres`,
+`mysql`, `crypto`) in full — without `{ ... }`. Details in `GUIDE.md`.
+
 ## Sandbox for untrusted code
 
 If a `.nx` script runs under your service's identity (e.g. AI-generated
