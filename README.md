@@ -113,8 +113,8 @@ func main() {
 }
 ```
 
-Import modules that rely on their own helpers (`telegram`, `postgres`,
-`mysql`, `crypto`) in full — without `{ ... }`. Details in `GUIDE.md`.
+Selective imports work too — `import "lib/postgres.nx" { pgConnect, pgQuery }`:
+everything those functions depend on is pulled in automatically. Details in `GUIDE.md`.
 
 ## Sandbox for untrusted code
 
