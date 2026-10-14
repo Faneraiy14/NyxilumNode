@@ -46,6 +46,7 @@ nx --version
 | Command | What it does |
 |---|---|
 | `nx file.nx` | run a file |
+| `nx ide` / `nx ide folder` | **Nx IDE** — a blocks (Scratch-like) + code environment with lessons and examples |
 | `nx` | REPL — executes line by line, `exit()` to quit |
 | `nx install owner/repo` | install a library from a public GitHub repository |
 | `nx install` | install everything listed in the current folder's `nx.json` |
@@ -55,6 +56,18 @@ nx --version
 | `nx lint file.nx` | check a file for common mistakes |
 | `nx check file.nx` | check syntax only (no code execution) |
 | `nx --version` | version |
+
+## Nx IDE — programming from zero
+
+```bash
+nx ide
+```
+
+Opens [Nx IDE](https://github.com/Faneraiy14/NyxilumIDE), an environment written in
+NyxilumLang itself (Ukrainian UI). Two modes: **Blocks** (Scratch-like, drag and drop)
+and **Code**. On first launch it gives a tour and opens lesson 1; there are lessons with
+automatic checks and a "Show me" demo, examples (games, drawings), beginner-friendly
+error hints and version history. Programs live in `~/NyxПрограми` (or `nx ide other/dir`).
 
 ## First program
 

@@ -79,6 +79,12 @@ jobs:
           repository: Faneraiy14/NyxilumDb
           path: NyxilumDb
 
+      - name: Checkout NyxilumIDE (Nx IDE - кладеться в архів як ide/, запуск `nx ide`)
+        uses: actions/checkout@v4
+        with:
+          repository: Faneraiy14/NyxilumIDE
+          path: NyxilumIDE
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -107,6 +113,7 @@ jobs:
           -r ${{ matrix.rid }} -f ${{ matrix.tfm }}
           --self-contained true
           -p:PublishSingleFile=true
+          -p:PublishReadyToRun=true
           -p:EnableWindowsTargeting=true
           -p:DebugType=None
           -p:Version=${{ steps.version.outputs.number }}
@@ -123,6 +130,12 @@ jobs:
           # стандартна бібліотека .nx (telegram, postgres, mysql, crypto...) -
           # без неї import "lib/..." працював лише з клоном NyxilumLang
           Copy-Item -Recurse NyxilumLang/lib publish-out/lib
+          # Nx IDE: `nx ide` шукає ide/src/ide.nx поруч з nx
+          New-Item -ItemType Directory -Path publish-out/ide | Out-Null
+          Copy-Item -Recurse NyxilumIDE/src publish-out/ide/src
+          Copy-Item -Recurse NyxilumIDE/examples publish-out/ide/examples
+          Remove-Item -Recurse -Force publish-out/ide/examples/.gen -ErrorAction SilentlyContinue
+          Copy-Item NyxilumIDE/README.md, NyxilumIDE/LICENSE, "NyxilumIDE/ПОСІБНИК.md" publish-out/ide/
           Compress-Archive -Path publish-out/* -DestinationPath "Nx-${{ matrix.rid }}.zip"
 
       - name: Package (Linux/Mac, tar.gz)
@@ -135,6 +148,11 @@ jobs:
           # стандартна бібліотека .nx (telegram, postgres, mysql, crypto...) -
           # без неї import "lib/..." працював лише з клоном NyxilumLang
           cp -r NyxilumLang/lib publish-out/lib
+          # Nx IDE: `nx ide` шукає ide/src/ide.nx поруч з nx
+          mkdir -p publish-out/ide
+          cp -r NyxilumIDE/src NyxilumIDE/examples publish-out/ide/
+          rm -rf publish-out/ide/examples/.gen
+          cp NyxilumIDE/README.md NyxilumIDE/LICENSE NyxilumIDE/ПОСІБНИК.md publish-out/ide/
           chmod +x "publish-out/${{ matrix.exe }}" publish-out/install-nx.sh
           tar -czf "Nx-${{ matrix.rid }}.${{ matrix.archive_ext }}" -C publish-out .
 
