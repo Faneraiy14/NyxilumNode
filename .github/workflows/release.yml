@@ -134,6 +134,8 @@ jobs:
           New-Item -ItemType Directory -Path publish-out/ide | Out-Null
           Copy-Item -Recurse NyxilumIDE/src publish-out/ide/src
           Copy-Item -Recurse NyxilumIDE/examples publish-out/ide/examples
+          # вбудовані розширення IDE (Anylint)
+          Copy-Item -Recurse NyxilumIDE/extensions publish-out/ide/extensions
           Remove-Item -Recurse -Force publish-out/ide/examples/.gen -ErrorAction SilentlyContinue
           Copy-Item NyxilumIDE/README.md, NyxilumIDE/LICENSE, "NyxilumIDE/ПОСІБНИК.md" publish-out/ide/
           Compress-Archive -Path publish-out/* -DestinationPath "Nx-${{ matrix.rid }}.zip"
@@ -150,7 +152,7 @@ jobs:
           cp -r NyxilumLang/lib publish-out/lib
           # Nx IDE: `nx ide` шукає ide/src/ide.nx поруч з nx
           mkdir -p publish-out/ide
-          cp -r NyxilumIDE/src NyxilumIDE/examples publish-out/ide/
+          cp -r NyxilumIDE/src NyxilumIDE/examples NyxilumIDE/extensions publish-out/ide/
           rm -rf publish-out/ide/examples/.gen
           cp NyxilumIDE/README.md NyxilumIDE/LICENSE NyxilumIDE/ПОСІБНИК.md publish-out/ide/
           chmod +x "publish-out/${{ matrix.exe }}" publish-out/install-nx.sh
