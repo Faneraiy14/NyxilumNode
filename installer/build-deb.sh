@@ -11,14 +11,15 @@ mkdir -p "$root/DEBIAN" "$root/opt/nyx" "$root/usr/bin" "$root/usr/share/applica
 cp -r "$src"/. "$root/opt/nyx/"
 chmod 755 "$root/opt/nyx/Nx"
 ln -s /opt/nyx/Nx "$root/usr/bin/nx"
-cp "$src/ide/assets/icon.png" "$root/usr/share/icons/hicolor/256x256/apps/nx-ide.png"
-cat > "$root/usr/share/applications/nx-ide.desktop" <<DESKTOP
+cp "$src/ide/assets/icon.png" "$root/usr/share/icons/hicolor/256x256/apps/nyxilum-node.png"
+# інші назви, ніж у пакеті nx-ide (окрема програма Nx IDE) - щоб обидва ставились разом
+cat > "$root/usr/share/applications/nyxilum-node-ide.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
-Name=Nx IDE
+Name=Nx IDE (NyxilumNode)
 Comment=Середовище NyxilumLang: блоки (як Scratch) і код
 Exec=/opt/nyx/Nx ide
-Icon=nx-ide
+Icon=nyxilum-node
 Terminal=false
 Categories=Development;
 DESKTOP
