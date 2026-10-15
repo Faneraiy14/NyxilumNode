@@ -124,8 +124,9 @@ jobs:
         shell: pwsh
         run: |
           Copy-Item NyxilumNode/install-nx.ps1 publish-out/
-          Copy-Item NyxilumNode/README.md publish-out/
+          Copy-Item NyxilumNode/README.md, NyxilumNode/README.uk.md publish-out/
           Copy-Item NyxilumNode/GUIDE.md publish-out/
+          Copy-Item NyxilumNode/GUIDE.uk.md publish-out/
           Copy-Item NyxilumNode/LICENSE publish-out/
           # стандартна бібліотека .nx (telegram, postgres, mysql, crypto...) -
           # без неї import "lib/..." працював лише з клоном NyxilumLang
@@ -136,27 +137,61 @@ jobs:
           Copy-Item -Recurse NyxilumIDE/examples publish-out/ide/examples
           # вбудовані розширення IDE (Anylint)
           Copy-Item -Recurse NyxilumIDE/extensions publish-out/ide/extensions
+          # іконка IDE - для ярликів інсталятора
+          Copy-Item -Recurse NyxilumIDE/assets publish-out/ide/assets
           Remove-Item -Recurse -Force publish-out/ide/examples/.gen -ErrorAction SilentlyContinue
           Copy-Item NyxilumIDE/README.md, NyxilumIDE/LICENSE, "NyxilumIDE/ПОСІБНИК.md" publish-out/ide/
           Compress-Archive -Path publish-out/* -DestinationPath "Nx-${{ matrix.rid }}.zip"
+          "Nx-${{ matrix.rid }}.zip" | Out-File -Encoding utf8 assets.txt
+
+      # Інсталятор-майстер (як у Node.js): Inno Setup, для поточного
+      # користувача, ярлик «Nx IDE», nx у PATH, видалення через «Програми».
+      - name: Installer (Windows, Inno Setup)
+        if: matrix.archive_ext == 'zip'
+        # інсталятор не вийшов - архів однаково має потрапити в реліз
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y | Out-Null
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DMyVersion=${{ steps.version.outputs.number }}" "/DSrcDir=$PWD\publish-out" "/O$PWD" NyxilumNode\installer\nyx.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC: код $LASTEXITCODE" }
+          "Nx-win-x64-setup.exe" | Out-File -Encoding utf8 -Append assets.txt
 
       - name: Package (Linux/Mac, tar.gz)
         if: matrix.archive_ext == 'tar.gz'
         run: |
           cp NyxilumNode/install-nx.sh publish-out/
-          cp NyxilumNode/README.md publish-out/
-          cp NyxilumNode/GUIDE.md publish-out/
+          cp NyxilumNode/README.md NyxilumNode/README.uk.md publish-out/
+          cp NyxilumNode/GUIDE.md NyxilumNode/GUIDE.uk.md publish-out/
           cp NyxilumNode/LICENSE publish-out/
           # стандартна бібліотека .nx (telegram, postgres, mysql, crypto...) -
           # без неї import "lib/..." працював лише з клоном NyxilumLang
           cp -r NyxilumLang/lib publish-out/lib
           # Nx IDE: `nx ide` шукає ide/src/ide.nx поруч з nx
           mkdir -p publish-out/ide
-          cp -r NyxilumIDE/src NyxilumIDE/examples NyxilumIDE/extensions publish-out/ide/
+          cp -r NyxilumIDE/src NyxilumIDE/examples NyxilumIDE/extensions NyxilumIDE/assets publish-out/ide/
           rm -rf publish-out/ide/examples/.gen
           cp NyxilumIDE/README.md NyxilumIDE/LICENSE NyxilumIDE/ПОСІБНИК.md publish-out/ide/
           chmod +x "publish-out/${{ matrix.exe }}" publish-out/install-nx.sh
           tar -czf "Nx-${{ matrix.rid }}.${{ matrix.archive_ext }}" -C publish-out .
+          echo "Nx-${{ matrix.rid }}.${{ matrix.archive_ext }}" > assets.txt
+
+      - name: Installer (Linux, .deb)
+        if: matrix.rid == 'linux-x64'
+        # інсталятор не вийшов - архів однаково має потрапити в реліз
+        continue-on-error: true
+        run: |
+          bash NyxilumNode/installer/build-deb.sh publish-out "${{ steps.version.outputs.number }}" Nx-linux-x64.deb
+          echo "Nx-linux-x64.deb" >> assets.txt
+
+      - name: Installer (macOS, .pkg)
+        if: startsWith(matrix.rid, 'osx-')
+        # інсталятор не вийшов - архів однаково має потрапити в реліз
+        continue-on-error: true
+        run: |
+          bash NyxilumNode/installer/build-pkg.sh publish-out "${{ steps.version.outputs.number }}" "Nx-${{ matrix.rid }}.pkg"
+          echo "Nx-${{ matrix.rid }}.pkg" >> assets.txt
 
       - name: Upload release asset
         # На windows-latest run: без явного shell: виконується в pwsh, де
@@ -166,7 +201,9 @@ jobs:
         # активна на конкретному раннері.
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.ref_name }}" "Nx-${{ matrix.rid }}.${{ matrix.archive_ext }}" --repo "${{ github.repository }}" --clobber
+        # архів + інсталятор(и) зі списку assets.txt; bash є й на Windows-раннері
+        shell: bash
+        run: tr -d '\r\357\273\277' < assets.txt | xargs gh release upload "${{ github.ref_name }}" --repo "${{ github.repository }}" --clobber
 
   sync-docs:
     # README.md/GUIDE.md у самому репозиторії NyxilumNode (те, що видно
@@ -189,6 +226,8 @@ jobs:
       - name: Sync GUIDE.md from NyxilumLang
         run: |
           cp NyxilumLang/GUIDE.md NyxilumNode/GUIDE.md
+          cp NyxilumLang/GUIDE.uk.md NyxilumNode/GUIDE.uk.md
+          sed -i 's/див\. INSTALL\.md/див. README.uk.md/' NyxilumNode/GUIDE.uk.md
           sed -i 's/див\. INSTALL\.md/див. README.md/' NyxilumNode/GUIDE.md
 
       - name: Commit if changed
@@ -207,12 +246,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- GUIDE.md; then
-            echo "GUIDE.md уже актуальний — коміт не потрібен"
+          if git diff --quiet -- GUIDE.md GUIDE.uk.md; then
+            echo "GUIDE.md і GUIDE.uk.md уже актуальні — коміт не потрібен"
             exit 0
           fi
-          git add GUIDE.md
-          git commit -m "Автосинхронізація GUIDE.md з NyxilumLang (реліз ${{ github.ref_name }})"
+          git add GUIDE.md GUIDE.uk.md
+          git commit -m "Автосинхронізація GUIDE.md і GUIDE.uk.md з NyxilumLang (реліз ${{ github.ref_name }})"
           for attempt in 1 2 3 4 5; do
             if git push origin HEAD:main; then
               exit 0

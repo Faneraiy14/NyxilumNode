@@ -11,35 +11,42 @@ The language's own source code lives in a separate repository:
 
 ## Installation
 
-Download the archive for your platform from the
-[Releases](../../releases/latest) page and unpack it.
+No .NET needed — everything is bundled.
 
-**Windows:**
+**Windows** — an installer, like Node.js: download **`Nx-win-x64-setup.exe`** from
+[Releases](../../releases/latest) and click "Next". No admin rights needed (installs for the
+current user). You get an **"Nx IDE"** shortcut on the desktop and in the Start menu, the `nx`
+command in the terminal, and uninstall via "Apps". If Windows shows "Windows protected your PC",
+the installer just isn't signed with a paid certificate: "More info" → "Run anyway".
 
-1. Right-click `install-nx.ps1` → **"Run with PowerShell"**
-   (or `powershell -ExecutionPolicy Bypass -File install-nx.ps1`).
-2. Open a **new** terminal window (PATH only updates in new ones).
-
-If Windows shows "Windows protected your PC" — the file isn't signed
-with a paid certificate. Click "More info" → "Run anyway".
-
-**Linux/Mac:**
+**Ubuntu / Debian** — download **`Nx-linux-x64.deb`** and open it with a double click
+("Install"), or:
 
 ```bash
-bash install-nx.sh
-source ~/.bashrc   # or ~/.zshrc, or just open a new terminal
+sudo apt install ./Nx-linux-x64.deb
 ```
 
-GUI (`guiWindow` etc.) and graphics (`createCanvas` etc.) only work on
-Windows — under the hood they use Windows Forms, which doesn't exist
-outside Windows. The rest of the language (the compiler, VM, and almost
-the entire standard library) works the same on all three platforms.
+**Any Linux or macOS** — one command, no sudo (everything goes to `~/.nyx`, an "Nx IDE"
+shortcut in the menu and on the desktop):
 
-Verify the install (any platform):
+```bash
+curl -fsSL https://raw.githubusercontent.com/Faneraiy14/NyxilumNode/main/install.sh | bash
+```
+
+**macOS** — there is also a package, `Nx-osx-arm64.pkg` (Apple M1/M2/…) / `Nx-osx-x64.pkg`
+(Intel): it isn't signed, so open it with right click → "Open".
+
+**Manually** — the `.zip` / `.tar.gz` archive from the same page: unpack it and run
+`install-nx.ps1` (Windows) or `bash install-nx.sh` (Linux/Mac).
+
+Check (any platform, in a **new** terminal):
 
 ```bash
 nx --version
 ```
+
+**Updating:** `nx update-self` (or `nx update-self --check` to only check).
+For `.deb`/`.pkg`, install the new package.
 
 ## Commands
 
@@ -55,6 +62,7 @@ nx --version
 | `nx format file.nx` | format a file |
 | `nx lint file.nx` | check a file for common mistakes |
 | `nx check file.nx` | check syntax only (no code execution) |
+| `nx update-self` | update nx (and the IDE) to the latest release |
 | `nx --version` | version |
 
 ## Nx IDE — programming from zero
@@ -63,11 +71,20 @@ nx --version
 nx ide
 ```
 
-Opens [Nx IDE](https://github.com/Faneraiy14/NyxilumIDE), an environment written in
-NyxilumLang itself (Ukrainian UI). Two modes: **Blocks** (Scratch-like, drag and drop)
-and **Code**. On first launch it gives a tour and opens lesson 1; there are lessons with
-automatic checks and a "Show me" demo, examples (games, drawings), beginner-friendly
-error hints and version history. Programs live in `~/NyxПрограми` (or `nx ide other/dir`).
+or the **"Nx IDE"** shortcut. It opens [Nx IDE](https://github.com/Faneraiy14/NyxilumIDE) —
+an environment written in NyxilumLang itself, the same on Linux and Windows:
+
+- **Blocks** (like Scratch): a hero on the stage, drawing, lists, your own blocks; "Open as code"
+  and back — "Open as blocks".
+- **Code** (like VS Code): completion, F12 — go to definition, F2 — rename everywhere, split
+  editor, step-by-step run (debugger) and a stage for games right inside the IDE.
+- **Lessons** with auto-checks and "Show me", examples, error hints in plain language.
+- **Tools:** terminal, git (commit, branches, push), version history, extensions (built-in —
+  Anylint; your own are written in NyxilumLang).
+- **Look:** themes (dark, light, high contrast), antialiased fonts, 100–200% scale.
+
+Programs live in `~/NyxПрограми` (or `nx ide other/dir`). The guide is `ide/ПОСІБНИК.md`
+(Ukrainian).
 
 ## First program
 

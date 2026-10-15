@@ -71,6 +71,9 @@ func outer() {
 print(outer()) // 42
 ```
 
+Значення `return` - лише в тому ж рядку: `return` і вираз з нового рядка - це голий `return`, а код
+нижче вже не виконується (Anylint позначить його як мертвий).
+
 ### Управляючі конструкції
 ```nx
 if (x > 0) {
@@ -229,7 +232,7 @@ func main() {
 ```
 Шлях в `import` — відносно файлу, що імпортує. Циклічні та повторні імпорти безпечні (кожен файл обробляється один раз).
 
-Вибірковий import — тягне лише перелічені функції/структури/глобальні змінні, а не весь файл:
+Вибірковий import — тягне перелічені функції/структури/глобальні змінні (разом з тим, що вони самі використовують), а не весь файл:
 ```nx
 import "math_helpers.nx" { square }
 
@@ -240,11 +243,13 @@ func main() {
 Методи названої структури підтягуються автоматично разом з нею. Якщо переліченого імені нема у файлі — помилка одразу при запуску (ще до виконання коду). Функції з іменем на `_` (напр. `_helper`) вважаються приватними хелперами модуля й тягнуться завжди, навіть якщо їх не перелічено — так публічна функція з того ж файлу може викликати свій внутрішній хелпер незалежно від того, що саме імпортує викликач.
 
 ### Стандартна бібліотека (`lib/`)
-У теці `lib/` в корені репозиторію лежать готові `.nx`-модулі — підключаються звичайним `import` за відносним шляхом (`../lib/...` з файлу в `tests/`, або `lib/...`, якщо скрипт лежить поруч із самою `lib/`):
+У теці `lib/` в корені репозиторію лежать готові `.nx`-модулі — підключаються звичайним `import` за відносним шляхом (`../lib/...` з файлу в `tests/`, або `lib/...`, якщо скрипт лежить поруч із самою `lib/`).
+
+Вибірковий `import "lib/x.nx" { a, b }` вливає перелічені імена разом з усім, від чого вони залежать (функції, які вони викликають, глобальні змінні, структури, а також потрібне з модулів, які імпортує сам модуль) - і нічого зайвого:
 
 - **`lib/datetime.nx`** — арифметика дат з правильними високосними роками (алгоритм Говарда Гіннанта, чиста NyxilumLang): `daysFromCivil(y,m,d)`/`civilFromDays(z)` (дата <-> днів від епохи), `isLeapYear(y)`, `dayOfWeek(y,m,d)` (0=неділя), `dayName(weekday)`, `addDays(y,m,d,n)`, `diffDays(y1,m1,d1,y2,m2,d2)`, `formatDate(y,m,d)`, `parseDate(s)`, `todayCivil()`.
 - **`lib/strings.nx`** — `capitalize(s)`, `titleCase(s)`, `isBlank(s)`, `isEmpty(s)`, `padLeft(s, len, ch)`, `padRight(s, len, ch)`, `countOccurrences(s, sub)`.
-- **`lib/collections.nx`** — `range(n)`, `rangeFrom(start, end)`, `sum(arr)`, `first(arr)`, `last(arr)`, `flatten(arr)` (один рівень), `zip(arr1, arr2)`, `chunk(arr, size)`, `count(arr, fn)`.
+- **`lib/collections.nx`** — `range(n)`, `rangeFrom(start, end)`, `sum(arr)`, `first(arr)`, `last(arr)`, `flatten(arr)` (один рівень), `zip(arr1, arr2)`, `chunk(arr, size)`, `count(arr, fn)`, `find(arr, fn)` (перший збіг або `null`), `findIndex(arr, fn)` (індекс першого збігу або `-1`), `every(arr, fn)`, `some(arr, fn)`.
 - **`lib/testing.nx`** — `assertTrue(cond, msg)`, `assertFalse(cond, msg)`, `assertEqual(actual, expected, msg)`, `assertThrows(fn, msg)`. Провал — звичайний `throw`, тож або лови його `try/catch` сам, або лишай непійманим, щоб процес впав з ненульовим кодом (зручно для CI).
   ```nx
   import "lib/testing.nx" { assertEqual }
@@ -265,7 +270,7 @@ func main() {
       print(toJson(response))
   }
   ```
-- **`lib/telegram.nx`** — обгортка над [Telegram Bot API](https://core.telegram.org/bots/api) (звичайний HTTPS+JSON, без WebSocket - тому повністю реалізований на самій NyxilumLang): `tgGetMe(token)`, `tgSendMessage(token, chatId, text)`, `tgGetUpdates(token, offset)`, `tgMessageText(update)`, `tgChatId(update)`, і блокуючий `tgPollLoop(token, handler)` для готового бота одним викликом. Токен читай через `osEnv("TELEGRAM_BOT_TOKEN")`, ніколи не хардкодь у скрипті. Повний робочий приклад ехо-бота: `programs/telegram_echo_bot.nx`.
+- **`lib/telegram.nx`** — обгортка над [Telegram Bot API](https://core.telegram.org/bots/api) (звичайний HTTPS+JSON, без WebSocket - тому повністю реалізований на самій NyxilumLang): `tgGetMe(token)`, `tgSendMessage(token, chatId, text)`, `tgGetUpdates(token, offset)`, `tgMessageText(update)`, `tgChatId(update)`, і блокуючий `tgPollLoop(token, handler)` для готового бота одним викликом. Токен читай через `osEnv("TELEGRAM_BOT_TOKEN")`, ніколи не хардкодь у скрипті. Повний робочий приклад ехо-бота: `programs/telegram_echo_bot.nx`. Inline-кнопки: `tgButton(text, data)`, `tgSendMessageWithButtons(token, chatId, text, rows)` (rows - масив рядків кнопок), натискання приходить як `callback_query` - `tgCallbackData(update)`, `tgCallbackMessageId(update)`, обов'язково `tgAnswerCallback(token, tgCallbackId(update), null)`; `tgEditMessage(token, chatId, messageId, text, rows)` міняє повідомлення на місці (меню без спаму). `tgPollLoopWithTick(token, handler, onTick)` - як `tgPollLoop`, плюс `onTick()` щонайменше раз на ~30 с (нагадування, розсилки).
   ```nx
   import "lib/telegram.nx" { tgPollLoop, tgMessageText, tgChatId, tgSendMessage }
 
@@ -293,6 +298,23 @@ func main() {
   }
   ```
   Не забудь увімкнути "Message Content Intent" у Discord Developer Portal - без нього `content` завжди порожній.
+
+- **`lib/bytes.nx`** — байти як масив чисел 0..255 (той самий формат, що в `tcpSend`/`tcpReceive`): `utf8Encode(s)`/`utf8Decode(bytes)` (з емодзі; невалідний UTF-8 -> U+FFFD), `asciiBytes(s)`, `base64Encode`/`base64Decode`, `bytesToHex`/`hexToBytes`, `bytesConcat`, `bytesAppend` (на місці), `bytesEqual`, `bytesXor`, цілі числа BE/LE (`u16be`, `u32be`, `readU32be`, `readI32be`, `u16le`, `u24le`, `u32le`, `readU16le`/`readU24le`/`readU32le`/`readU64le`), IEEE-754 `readF32le`/`readF64le`.
+- **`lib/crypto.nx`** — хеші на ЧИСТІЙ NyxilumLang, без нативного коду: `sha1`, `sha256`, `md5`, `hmacSha256(key, msg)`, `pbkdf2Sha256(password, salt, iterations, dkLen)`, `randomBytes(n)` (⚠️ не криптографічний генератор - лише для nonce). Для паролів і протоколів, не для масових даних: у VM SHA-256 ~4 мс на 64-байтовий блок.
+- **`lib/postgres.nx`** — клієнт PostgreSQL (протокол v3) на чистій NyxilumLang поверх `tcp*`: авторизація trust / cleartext / MD5 / SCRAM-SHA-256, TLS (`?sslmode=require` - без перевірки сертифіката, як у libpq; `?sslmode=verify-full` - з перевіркою), параметри `$1..$n` окремо від SQL (захист від SQL-ін'єкцій). Типи: bool, цілі/float/numeric -> число, NULL -> `null`, решта -> рядок. ⚠️ Перше SCRAM-підключення рахує PBKDF2 ~9 с у релізному `nx` (далі кеш на весь процес).
+  ```nx
+  import "lib/postgres.nx" { pgConnect, pgExec, pgQuery, pgClose }
+
+  func main() {
+      var db = pgConnect(osEnv("DATABASE_URL"))   // postgres://user:pass@host:5432/db?sslmode=require
+      pgExec(db, "INSERT INTO notes(title) VALUES ($1)", ["Привіт"])
+      var rows = pgQuery(db, "SELECT id, title FROM notes WHERE id > $1", [0])
+      print(toJson(rows))   // [{"id":1,"title":"Привіт"}]
+      pgClose(db)
+  }
+  ```
+- **`lib/mysql.nx`** — клієнт MySQL / MariaDB на чистій NyxilumLang: `mysql_native_password` і `caching_sha2_password` (MySQL 8), AuthSwitch, TLS (`?ssl=true` / `?ssl=verify`), параметри `?` через prepared statements. `mysqlConnect(url)`, `mysqlQuery(db, sql, params)` -> масив мап, `mysqlExec` -> кількість змінених рядків, `mysqlInsert` -> id нового рядка, `mysqlClose`. DATE/DATETIME -> рядок `"YYYY-MM-DD HH:MM:SS"`. ⚠️ MySQL 8: перший вхід користувача після рестарту сервера вимагає `?ssl=true`.
+- **`lib/url.nx`** — `dbParseUrl(url, defaultPort, defaultUser)` і `urlPercentDecode(s)` (пароль з `@`/`:`/кирилицею - через `%40`, `%3A`, `%D0%9F`...).
 
 ### Функції вищого порядку та JSON
 ```nx
@@ -434,6 +456,54 @@ closeCanvas(canvas)
 ```
 3D робиться поверх того ж полотна: обертання точок через `sin`/`cos` (уже вбудовані), а `project3D(canvas, x, y, z, camDistance)` перетворює 3D-координату в 2D-точку екрана — і далі малюєш ребра через `drawLine`. Ввід: `isKeyDown("W")`, `isMouseDown(canvas)`, `getMouseX/Y(canvas)`, `canvasShouldClose(canvas)`.
 
+### Полотно surface* (Linux і Windows однаково)
+Вікно-полотно для програм з власним інтерфейсом (IDE, ігри, редактори). Пікселі
+малюються в пам'яті однаково на всіх платформах, `surfacePresent` показує кадр
+(на екран іде лише те, що змінилося). Колір - одне число `0xRRGGBB` або
+`rgb(r, g, b)`; `0xAARRGGBB` / `rgba(r, g, b, a)` - напівпрозорий.
+
+```nx
+func main() {
+    var s = surfaceOpen("Моя програма", 800, 600)
+    while (surfaceIsOpen(s)) {
+        surfaceClear(s, 0x1e1e2e)
+        surfaceRoundRect(s, 20, 20, 200, 50, 10, 0x89b4fa)
+        surfaceText(s, "Привіт, світе!", 36, 36, 20, 0x11111b, true)
+        surfacePresent(s)
+
+        var e = surfaceNextEvent(s)          // чекає наступну подію
+        if (e != null && e.type == "key" && e.key == "Escape") { surfaceClose(s) }
+    }
+}
+```
+
+- Малювання: `surfaceClear(s, колір)`, `surfaceRect(s, x, y, w, h, колір)`,
+  `surfaceRectLine(s, x, y, w, h, колір, товщина?)`, `surfaceRoundRect(s, x, y, w, h, радіус, колір)`,
+  `surfaceCircle(s, cx, cy, r, колір)`, `surfaceCircleLine(s, cx, cy, r, колір, товщина?)`,
+  `surfaceLine(s, x1, y1, x2, y2, колір, товщина?)`, `surfacePolygon(s, [x1, y1, x2, y2, ...], колір)`.
+- Текст (вшитий шрифт Terminus: латиниця, кирилиця, ґ/є/і/ї, стрілки): `surfaceText(s, текст, x, y, розмір, колір, жирний?)`
+  повертає ширину; розміри 12/14/16/20/24/28/32 (більші - збільшені). `textWidth(текст, розмір)`, `textHeight(розмір)`.
+  Шрифт моноширинний - зручно для редакторів коду.
+- Шрифти: `surfaceFont("pixel" | "sans" | "mono")` повертає попередній. `"pixel"` (типово) - Terminus;
+  `"sans"`/`"mono"` - згладжені Noto Sans / Noto Sans Mono (вшиті, OFL; у мові власний розбір і
+  растеризація TrueType, тож текст однаковий на всіх платформах). Гліфи, яких у шрифті нема (стрілки, √),
+  беруться з іншого шрифту чи Terminus. Клітинка тексту - так само `size` пікселів заввишки, тож
+  розкладка під піксельний шрифт не зсувається.
+- Масштаб інтерфейсу: `surfaceScale(k)` (напр. `1.5`) повертає попередній. Програма далі малює й отримує
+  координати миші в логічних пікселях, полотно - у `k` разів більше, TTF-текст лишається чітким.
+- Обрізання: `surfaceClip(s, x, y, w, h)` ... `surfaceUnclip(s)` (вкладаються).
+- Події: `surfaceNextEvent(s, чекатиМс?)` - структура або `null`. Поля: `type`
+  (`mousedown`/`mouseup`/`mousemove`/`wheel`/`key`/`keyup`/`text`/`resize`/`close`),
+  `x`, `y`, `button` (1 ліва, 2 середня, 3 права), `dy` (колесо), `key` (`"a"`, `"Enter"`,
+  `"Left"`, `"F5"`... - для літер латинська навіть в українській розкладці, тож Ctrl+C працює завжди),
+  `text` (набраний символ з урахуванням розкладки), `ctrl`/`shift`/`alt`, `width`/`height` (resize), `time`.
+- Опитування (для ігор): `surfaceMouseX/Y(s)`, `surfaceMouseDown(s)`, `surfaceKeyDown(s, "Left")`.
+- Інше: `surfaceWidth/Height(s)`, `surfaceTitle(s, назва)`, `surfaceGetPixel(s, x, y)`,
+  `surfaceSave(s, "кадр.png")`, `surfacePostEvent(s, подія)` (штучна подія - для тестів і демо),
+  `clipboardGet()` / `clipboardSet(текст)`, `timeMs()` (мілісекунди).
+- `NX_HEADLESS=1` - полотно без вікна (автотести, CI): усе працює, крім показу на екрані.
+- Демо: `nx programs/surface_demo.nx`.
+
 ### Вбудовані функції
 - `print(val)` - вивід у консоль
 - `readLine()`, `readInt()`, `readDouble()` - читання з консолі
@@ -441,7 +511,7 @@ closeCanvas(canvas)
 - `max/min(a,b)` або `max/min(arr)` - максимум/мінімум двох чисел або всього масиву
 - `toFixed(x,n)` - число як рядок з n знаками після коми, напр. `toFixed(3.14159, 2)` -> `"3.14"`
 - `readFile(path)`, `writeFile(path, content)`, `appendFile(path, content)`, `fileExists(path)`, `readLines(path)` - робота з файлами
-- `deleteFile(path)`, `makeDir(path)`, `dirExists(path)`, `deleteDir(path)` (рекурсивно), `listDir(path)` (масив імен файлів/тек усередині) - файли й теки
+- `deleteFile(path)`, `makeDir(path)`, `dirExists(path)`, `deleteDir(path)` (рекурсивно), `listDir(path)` (масив імен файлів/тек усередині), `movePath(from, to)` (перейменувати/перемістити файл чи теку, не перезаписує), `copyFile(from, to)` - файли й теки
 - `zipCreate(zipPath, sourceDir)` - запакувати теку в архів; `zipExtract(zipPath, destDir)` - розпакувати ввесь архів, повертає кількість файлів; `zipEntries(zipPath)` - список імен файлів усередині БЕЗ розпаковування; `zipExtractEntry(zipPath, entryName, destPath)` - витягнути лише один файл, повертає `true`/`false` (є така точка в архіві?)
 - `toString(v)`, `toInt(v)`, `toDouble(v)`, `typeOf(v)`, `isNumber/isString/isArray/isBool(v)` - перетворення та перевірка типів. Числові рядки завжди парсяться з "." як десятковим роздільником незалежно від локалі ОС, на якій запущено `Nx` (процес примусово стартує з `CultureInfo.InvariantCulture`) - `toDouble("0.083")` дає однаковий результат що на en-US, що на uk-UA машині
 - `charCode(s)` - код першого символу рядка (наприклад, `charCode("A")` -> 65); `fromCharCode(code)` - символ за кодом
@@ -468,13 +538,13 @@ closeCanvas(canvas)
 - `guiOnAction(button,fn)` - викликати NyxilumLang-функцію `fn` при кліку (звичайну функцію-значення, як у `sort(arr,cmp)` — без дужок, не рядок з іменем)
 - `guiShow(win)` - показати вікно (блокує, доки вікно не закриють)
 - `isKeyDown(key)`, `isMouseDown(canvas)`, `getMouseX/Y(canvas)` - ввід для вікна
-- `randomInt(min,max)`, `randomDouble(min,max)`, `now()`, `today()`, `timestamp()` - утиліти
+- `randomInt(min,max)`, `randomDouble(min,max)`, `secureRandomBytes(n)` (криптостійкі байти 0-255 для ключів/солей/nonce), `pbkdf2Native(пароль, сіль, ітерації, довжина)` (PBKDF2-HMAC-SHA256 ОС, масиви байтів), `now()`, `today()`, `timestamp()` - утиліти
 - `formatDate(timestamp, format?)` - Unix-timestamp (секунди) у рядок довільного формату (.NET custom date format, напр. `"dd.MM.yyyy HH:mm"`); без `format` - той самий вигляд, що й `now()`; `parseDate(str, format)` - обернена операція, рядок за форматом назад у Unix-timestamp; кидає помилку, якщо рядок не відповідає формату
 - `osPlatform()`, `osArchitecture()`, `osMemory()`, `osCpuCount()`, `osEnv(name)`, `osCwd()` - інформація про систему
 - `osProcessList()` - масив усіх процесів ОС (не лише дочірніх, як `procRun`/`procStart`), кожен - `{pid, name, memMB, cpuPercent}`; `cpuPercent` рахується як `top`/`htop` - двома замірами `TotalProcessorTime` з паузою ~200мс між ними, тож виклик не миттєвий. Процеси, що завершились між замірами, просто пропускаються, не валять виклик
 - `osDiskFree(path?)` - `{freeGB, totalGB}` для тому, що містить `path` (типово поточна директорія)
 - `notify(title, message)` - системне push-сповіщення ОС (не власне вікно програми - справжній баблик поверх усіх вікон, як у месенджерів): `notify-send` на Linux, `osascript` на macOS, `NotifyIcon`-балон через PowerShell на Windows
-- `procStart(cmd, args?, options?)` - запускає зовнішній процес ОС і одразу повертає хендл, НЕ чекаючи завершення (`args` - масив рядків, `options` - мапа з `cwd`/`env`); `procRun(cmd, args?, options?)` - те саме, але БЛОКУЄ до завершення й повертає мапу `{exitCode, stdout, stderr}`; `procWait(h)` - чекає завершення вже запущеного `procStart`, повертає код виходу; `procIsRunning(h)`, `procKill(h)`, `procPid(h)`, `procExitCode(h)` (`null`, доки процес ще працює); `procOutput(h)`/`procErrorOutput(h)` - усе, що процес вивів у stdout/stderr ДОСІ (можна перечитувати повторно, поки процес ще працює). У пісочниці (`NX_SANDBOX=1`) заборонено завжди
+- `procStart(cmd, args?, options?)` - запускає зовнішній процес ОС і одразу повертає хендл, НЕ чекаючи завершення (`args` - масив рядків, `options` - мапа з `cwd`/`env`/`interactive` (stdin відкритий для `procWrite`)/`rawArgs` (рядок аргументів як є, напр. `cmd.exe /s /c "..."` на Windows)); дочірній `nx`, запущений з `env` `NX_EXIT_WITH_PARENT=1`, завершується сам, коли батьківського процесу не стало; `procRun(cmd, args?, options?)` - те саме, але БЛОКУЄ до завершення й повертає мапу `{exitCode, stdout, stderr}`; `procWait(h)` - чекає завершення вже запущеного `procStart`, повертає код виходу; `procIsRunning(h)`, `procKill(h)`, `procPid(h)`, `procExitCode(h)` (`null`, доки процес ще працює); `procOutput(h)`/`procErrorOutput(h)` - усе, що процес вивів у stdout/stderr ДОСІ (можна перечитувати повторно, поки процес ще працює). У пісочниці (`NX_SANDBOX=1`) заборонено завжди
 - `httpGet(url)`, `urlStatus(url)` - HTTP-запити
 - `httpPost(url, body)` - POST-запит з тілом `body` (Content-Type `application/json`), повертає тіло відповіді рядком
 - `httpRequest(url, method, body?, headers?)` - запит довільним методом (`"PUT"`, `"DELETE"`, `"PATCH"` тощо), повертає мапу `{status, body}`; `headers` - мапа (`newMap`/`mapSet`) для заголовків на кшталт `Authorization`
@@ -482,13 +552,18 @@ closeCanvas(canvas)
 - `httpServer(port, handler, wsHandler?)` - HTTP-сервер; `handler(request)` викликається на кожен звичайний запит з ОДНІЄЮ мапою `{path, method, body, query, headers}` (`body` - тіло POST/PUT-запиту, `headers` - мапа заголовків запиту). Відповідь - звичайний рядок (статус 200, `text/html`) або мапа `{status?, body?, contentType?}` для повного контролю. Опційний третій аргумент `wsHandler(ws, request)` - запити з `Upgrade: websocket` приймаються як WebSocket-з'єднання (той самий `ws`, що й у `wsConnect()` - усередині працюють ті самі `wsSend`/`wsReceive`/`wsClose`); кожне з'єднання виконується в окремому потоці зі своєю VM, тож довгоживучий WS не блокує прийом інших клієнтів. Блокує назавжди (Ctrl+C для зупинки)
 - `regexTest(s, pattern)` - чи збігається рядок з regex-шаблоном (bool); `regexMatch(s, pattern)` - перший збіг або `null`; `regexFindAll(s, pattern)` - масив усіх збігів; `regexReplace(s, pattern, replacement)` - заміна всіх збігів
 - `guiWindow(title, w, h)`, `guiButton(text, x, y, w, h)`, `guiShow(win)` - GUI (експериментально)
+- `tcpConnect(host, port)` -> з'єднання; `tcpSend(conn, bytes)`; `tcpReceive(conn, n)` - рівно `n` байт (чекає; кидає, якщо з'єднання закрилось); `tcpStartTls(conn, host, verify?)` - увімкнути TLS посеред з'єднання (`verify=false` - без перевірки сертифіката); `tcpClose(conn)`. Байти - масив чисел 0..255. Навмисно лише "двері" в мережу: протоколи (`lib/postgres.nx`, `lib/mysql.nx`) і крипта (`lib/crypto.nx`) написані на самій NyxilumLang
+- `httpServer` слухає лише `localhost`; `NX_HTTP_HOST=0.0.0.0` у середовищі - усі інтерфейси (потрібно в Docker/на хостингах на кшталт Render)
+- ⚠️ `substring(s, start, length)` - третій аргумент ДОВЖИНА (як у C#), а `slice(arr, start, end)` - третій аргумент КІНЕЦЬ
 
 ## Як запустити
-Після встановлення (див. README.md) команда `nx` доступна на будь-якій
+Після встановлення (див. README.uk.md) команда `nx` доступна на будь-якій
 платформі (Windows/Linux/Mac) — передайте шлях до файлу:
 `nx program.nx`
 
 Інші команди:
+- `nx update-self [--check] [--force]` - оновити сам nx (і Nx IDE, `lib/`, документацію поруч) до останнього релізу NyxilumNode
+- `nx ide [тека]` - Nx IDE: середовище з блоками (як Scratch) і кодом, уроками й прикладами (входить у реліз NyxilumNode; з клону - `NX_IDE_HOME=/шлях/до/NyxilumIDE nx ide`)
 - `nx format program.nx` - вивести відформатований код
 - `nx lint program.nx` - перевірити код на типові помилки (невикористані змінні, задовгі рядки, порожні блоки)
 - `nx check program.nx` - лише Lexer+Parser (без Compiler/VM) - "чи взагалі валідний синтаксис", без побічних ефектів; виводить `OK` або `Parse Error: ...`
